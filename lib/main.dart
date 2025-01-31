@@ -1,11 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:point_calculator/components/text.dart';
 import 'package:point_calculator/create_room/create_room_widget.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await dotenv.load(fileName: ".env");
+  final url = dotenv.env["SUPABASE_URL"];
+  final anonKey = dotenv.env["SUPABASE_ANON_KEY"];
+  await Supabase.initialize(
+    url: url!,
+    anonKey: anonKey!,
+  );
   runApp(
-    ProviderScope(
+    const ProviderScope(
       child: MyApp(),
     ),
   );
@@ -16,7 +26,7 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return const MaterialApp(
       home: HomeScreen(),
     );
   }
@@ -54,7 +64,7 @@ class HomeScreen extends StatelessWidget {
                   ),
                 ),
               ),
-              SizedBox(height: 100),
+              const SizedBox(height: 100),
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(

@@ -7,7 +7,7 @@ class CreateRoomState with _$CreateRoomState {
     @Default('') String roomName,
     @Default([]) List<Member> members,
   }) = _CreateRoomState;
-   const CreateRoomState._(); 
+  const CreateRoomState._(); 
 
   bool isValidMembers() {
     return members.length >= 3 && members.every((member) => member.name.isNotEmpty);
