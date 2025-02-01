@@ -177,6 +177,7 @@ abstract class _CreateRoomState extends CreateRoomState {
 /// @nodoc
 mixin _$Member {
   String get name => throw _privateConstructorUsedError;
+  int get id => throw _privateConstructorUsedError;
 
   /// Create a copy of Member
   /// with the given fields replaced by the non-null parameter values.
@@ -189,7 +190,7 @@ abstract class $MemberCopyWith<$Res> {
   factory $MemberCopyWith(Member value, $Res Function(Member) then) =
       _$MemberCopyWithImpl<$Res, Member>;
   @useResult
-  $Res call({String name});
+  $Res call({String name, int id});
 }
 
 /// @nodoc
@@ -208,12 +209,17 @@ class _$MemberCopyWithImpl<$Res, $Val extends Member>
   @override
   $Res call({
     Object? name = null,
+    Object? id = null,
   }) {
     return _then(_value.copyWith(
       name: null == name
           ? _value.name
           : name // ignore: cast_nullable_to_non_nullable
               as String,
+      id: null == id
+          ? _value.id
+          : id // ignore: cast_nullable_to_non_nullable
+              as int,
     ) as $Val);
   }
 }
@@ -225,7 +231,7 @@ abstract class _$$MemberImplCopyWith<$Res> implements $MemberCopyWith<$Res> {
       __$$MemberImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call({String name});
+  $Res call({String name, int id});
 }
 
 /// @nodoc
@@ -242,12 +248,17 @@ class __$$MemberImplCopyWithImpl<$Res>
   @override
   $Res call({
     Object? name = null,
+    Object? id = null,
   }) {
     return _then(_$MemberImpl(
       name: null == name
           ? _value.name
           : name // ignore: cast_nullable_to_non_nullable
               as String,
+      id: null == id
+          ? _value.id
+          : id // ignore: cast_nullable_to_non_nullable
+              as int,
     ));
   }
 }
@@ -255,15 +266,18 @@ class __$$MemberImplCopyWithImpl<$Res>
 /// @nodoc
 
 class _$MemberImpl implements _Member {
-  const _$MemberImpl({this.name = ''});
+  const _$MemberImpl({this.name = '', this.id = 0});
 
   @override
   @JsonKey()
   final String name;
+  @override
+  @JsonKey()
+  final int id;
 
   @override
   String toString() {
-    return 'Member(name: $name)';
+    return 'Member(name: $name, id: $id)';
   }
 
   @override
@@ -271,11 +285,12 @@ class _$MemberImpl implements _Member {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
             other is _$MemberImpl &&
-            (identical(other.name, name) || other.name == name));
+            (identical(other.name, name) || other.name == name) &&
+            (identical(other.id, id) || other.id == id));
   }
 
   @override
-  int get hashCode => Object.hash(runtimeType, name);
+  int get hashCode => Object.hash(runtimeType, name, id);
 
   /// Create a copy of Member
   /// with the given fields replaced by the non-null parameter values.
@@ -287,10 +302,12 @@ class _$MemberImpl implements _Member {
 }
 
 abstract class _Member implements Member {
-  const factory _Member({final String name}) = _$MemberImpl;
+  const factory _Member({final String name, final int id}) = _$MemberImpl;
 
   @override
   String get name;
+  @override
+  int get id;
 
   /// Create a copy of Member
   /// with the given fields replaced by the non-null parameter values.

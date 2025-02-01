@@ -18,5 +18,6 @@ class CreateRoomState with _$CreateRoomState {
 class Member with _$Member {
   const factory Member({
     @Default('') String name,
+    @Default(0) int id,
   }) = _Member;
 }

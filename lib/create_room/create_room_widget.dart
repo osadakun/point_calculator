@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:point_calculator/components/text.dart';
 import 'package:point_calculator/create_room/create_room_view_model.dart';
+import 'package:point_calculator/gateway/rooms_gateway.dart';
 
 class CreateRoomWidget extends HookConsumerWidget {
   const CreateRoomWidget({super.key});
@@ -11,9 +12,9 @@ class CreateRoomWidget extends HookConsumerWidget {
     final state = ref.watch(createRoomViewModelProvider);
     final isActive = state.isValidMembers();
     final viewModel = ref.read(createRoomViewModelProvider.notifier);
+    final client = ref.read(roomsGatewayProvider.notifier);
 
     return Scaffold(
-      backgroundColor: Colors.grey[300],
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(16),
@@ -27,6 +28,7 @@ class CreateRoomWidget extends HookConsumerWidget {
                   SizedBox(
                     width: 200,
                     child: buildTextFormField(
+                      context,
                       (value) {
                         viewModel.updateRoomName(value);
                       },
@@ -61,6 +63,7 @@ class CreateRoomWidget extends HookConsumerWidget {
                         children: [
                           Expanded(
                             child: buildTextFormField(
+                              context,
                               (value) {
                                 viewModel.updateMembers(index, value);
                               },
@@ -84,15 +87,38 @@ class CreateRoomWidget extends HookConsumerWidget {
               const SizedBox(height: 16),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.orange,
-                  disabledBackgroundColor: Colors.orange.withValues(alpha: 0.3),
+                  backgroundColor:
+                      isActive ? Colors.blue : Colors.grey.shade400,
                   shape: const StadiumBorder(),
                 ),
-                onPressed: isActive ? () {} : null,
+                onPressed: isActive
+                    ? () async {
+                        final res = await client.createRoom(state.roomName);
+                        res.map(
+                          success: (_) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                  content: Text(
+                                      '部屋が作成されました\n「部屋に入る」から作成した部屋に入室してください')),
+                            );
+                            Navigator.pop(context);
+                          },
+                          failure: (error) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                    '部屋の作成に失敗しました\nFailed to create room: $error'),
+                                duration: const Duration(seconds: 10),
+                              ),
+                            );
+                          },
+                        );
+                      }
+                    : null,
                 child: CustomText(
                   text: "部屋を作成",
                   isBold: true,
-                  color: isActive ? Colors.black : Colors.grey,
+                  color: isActive ? Colors.white : Colors.grey.shade600,
                 ),
               ),
             ],
@@ -103,11 +129,13 @@ class CreateRoomWidget extends HookConsumerWidget {
   }
 
   TextFormField buildTextFormField(
+    BuildContext context,
     Function(String) onChanged, {
     String initialValue = '',
     String hintText = '',
   }) {
     return TextFormField(
+      onTap: () => FocusScope.of(context).unfocus(),
       style: const TextStyle(fontSize: 20),
       decoration: InputDecoration(
         border: OutlineInputBorder(
