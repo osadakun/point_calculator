@@ -157,6 +157,7 @@ abstract class _EnterRoomState implements EnterRoomState {
 mixin _$RoomName {
   String get name => throw _privateConstructorUsedError;
   int get roomId => throw _privateConstructorUsedError;
+  List<String> get members => throw _privateConstructorUsedError;
 
   /// Create a copy of RoomName
   /// with the given fields replaced by the non-null parameter values.
@@ -170,7 +171,7 @@ abstract class $RoomNameCopyWith<$Res> {
   factory $RoomNameCopyWith(RoomName value, $Res Function(RoomName) then) =
       _$RoomNameCopyWithImpl<$Res, RoomName>;
   @useResult
-  $Res call({String name, int roomId});
+  $Res call({String name, int roomId, List<String> members});
 }
 
 /// @nodoc
@@ -190,6 +191,7 @@ class _$RoomNameCopyWithImpl<$Res, $Val extends RoomName>
   $Res call({
     Object? name = null,
     Object? roomId = null,
+    Object? members = null,
   }) {
     return _then(_value.copyWith(
       name: null == name
@@ -200,6 +202,10 @@ class _$RoomNameCopyWithImpl<$Res, $Val extends RoomName>
           ? _value.roomId
           : roomId // ignore: cast_nullable_to_non_nullable
               as int,
+      members: null == members
+          ? _value.members
+          : members // ignore: cast_nullable_to_non_nullable
+              as List<String>,
     ) as $Val);
   }
 }
@@ -212,7 +218,7 @@ abstract class _$$RoomNameImplCopyWith<$Res>
       __$$RoomNameImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call({String name, int roomId});
+  $Res call({String name, int roomId, List<String> members});
 }
 
 /// @nodoc
@@ -230,6 +236,7 @@ class __$$RoomNameImplCopyWithImpl<$Res>
   $Res call({
     Object? name = null,
     Object? roomId = null,
+    Object? members = null,
   }) {
     return _then(_$RoomNameImpl(
       name: null == name
@@ -240,6 +247,10 @@ class __$$RoomNameImplCopyWithImpl<$Res>
           ? _value.roomId
           : roomId // ignore: cast_nullable_to_non_nullable
               as int,
+      members: null == members
+          ? _value._members
+          : members // ignore: cast_nullable_to_non_nullable
+              as List<String>,
     ));
   }
 }
@@ -247,7 +258,9 @@ class __$$RoomNameImplCopyWithImpl<$Res>
 /// @nodoc
 
 class _$RoomNameImpl implements _RoomName {
-  const _$RoomNameImpl({this.name = '', this.roomId = 0});
+  const _$RoomNameImpl(
+      {this.name = '', this.roomId = 0, final List<String> members = const []})
+      : _members = members;
 
   @override
   @JsonKey()
@@ -255,10 +268,18 @@ class _$RoomNameImpl implements _RoomName {
   @override
   @JsonKey()
   final int roomId;
+  final List<String> _members;
+  @override
+  @JsonKey()
+  List<String> get members {
+    if (_members is EqualUnmodifiableListView) return _members;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableListView(_members);
+  }
 
   @override
   String toString() {
-    return 'RoomName(name: $name, roomId: $roomId)';
+    return 'RoomName(name: $name, roomId: $roomId, members: $members)';
   }
 
   @override
@@ -267,11 +288,13 @@ class _$RoomNameImpl implements _RoomName {
         (other.runtimeType == runtimeType &&
             other is _$RoomNameImpl &&
             (identical(other.name, name) || other.name == name) &&
-            (identical(other.roomId, roomId) || other.roomId == roomId));
+            (identical(other.roomId, roomId) || other.roomId == roomId) &&
+            const DeepCollectionEquality().equals(other._members, _members));
   }
 
   @override
-  int get hashCode => Object.hash(runtimeType, name, roomId);
+  int get hashCode => Object.hash(
+      runtimeType, name, roomId, const DeepCollectionEquality().hash(_members));
 
   /// Create a copy of RoomName
   /// with the given fields replaced by the non-null parameter values.
@@ -283,13 +306,17 @@ class _$RoomNameImpl implements _RoomName {
 }
 
 abstract class _RoomName implements RoomName {
-  const factory _RoomName({final String name, final int roomId}) =
-      _$RoomNameImpl;
+  const factory _RoomName(
+      {final String name,
+      final int roomId,
+      final List<String> members}) = _$RoomNameImpl;
 
   @override
   String get name;
   @override
   int get roomId;
+  @override
+  List<String> get members;
 
   /// Create a copy of RoomName
   /// with the given fields replaced by the non-null parameter values.

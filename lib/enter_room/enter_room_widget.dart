@@ -4,7 +4,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:point_calculator/components/card.dart';
 import 'package:point_calculator/enter_room/enter_room_state.dart';
 import 'package:point_calculator/enter_room/enter_room_view_model.dart';
-import 'package:point_calculator/gateway/rooms_gateway.dart';
+import 'package:point_calculator/gateway/supabase_gateway.dart';
 
 class EnterRoomWidget extends HookConsumerWidget {
   const EnterRoomWidget({super.key});
@@ -15,18 +15,18 @@ class EnterRoomWidget extends HookConsumerWidget {
     final roomList = useState<List<RoomName>>([]);
     final isLoading = useState<bool>(true);
     final errorMessage = useState<String?>(null);
-    final client = ref.read(roomsGatewayProvider.notifier);
+    final client = ref.read(supabaseGatewayProvider.notifier);
     useEffect(() {
       Future(() async {
-        final result = await client.fetchRooms();
+        final result = await client.fetchRoomInformations();
         result.map(
           success: (data) {
-            roomList.value = data
-                .map((room) => RoomName(
-                      name: room['room_name'] as String,
-                      roomId: room['id'] as int,
-                    ))
-                .toList();
+            roomList.value = data.entries.map((entry) {
+              return RoomName(
+                roomId: int.parse(entry.key),
+                members: entry.value,
+              );
+            }).toList();
             viewModel.updateRoomName(roomList.value);
             isLoading.value = false;
           },

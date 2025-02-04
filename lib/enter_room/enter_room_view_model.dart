@@ -1,3 +1,4 @@
+import 'package:point_calculator/create_room/create_room_state.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'enter_room_state.dart';
 
@@ -12,5 +13,9 @@ class EnterRoomViewModel extends _$EnterRoomViewModel {
 
   void updateRoomName(List<RoomName> list) {
     state = state.copyWith(roomNames: list);
+  }
+
+  void updateRoomMembers(List<String> list) {
+    state = state.copyWith(roomNames: state.roomNames.map((e) => e.copyWith(members: list)).toList());
   }
 }

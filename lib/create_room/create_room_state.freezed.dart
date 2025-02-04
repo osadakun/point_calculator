@@ -108,11 +108,10 @@ class __$$CreateRoomStateImplCopyWithImpl<$Res>
 
 /// @nodoc
 
-class _$CreateRoomStateImpl extends _CreateRoomState {
+class _$CreateRoomStateImpl implements _CreateRoomState {
   const _$CreateRoomStateImpl(
       {this.roomName = '', final List<Member> members = const []})
-      : _members = members,
-        super._();
+      : _members = members;
 
   @override
   @JsonKey()
@@ -155,11 +154,10 @@ class _$CreateRoomStateImpl extends _CreateRoomState {
           this, _$identity);
 }
 
-abstract class _CreateRoomState extends CreateRoomState {
+abstract class _CreateRoomState implements CreateRoomState {
   const factory _CreateRoomState(
       {final String roomName,
       final List<Member> members}) = _$CreateRoomStateImpl;
-  const _CreateRoomState._() : super._();
 
   @override
   String get roomName;

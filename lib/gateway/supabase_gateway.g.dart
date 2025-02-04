@@ -6,12 +6,29 @@ part of 'supabase_gateway.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$supabaseGatewayHash() => r'0bcb47f5670f22e848f1a4aefec758971472e0bb';
+String _$supabaseHash() => r'bf569ca6e718c2eaa4101f9a8cfab3a761fba195';
 
-/// See also [supabaseGateway].
-@ProviderFor(supabaseGateway)
-final supabaseGatewayProvider = Provider<SupabaseClient>.internal(
-  supabaseGateway,
+/// See also [supabase].
+@ProviderFor(supabase)
+final supabaseProvider = Provider<SupabaseClient>.internal(
+  supabase,
+  name: r'supabaseProvider',
+  debugGetCreateSourceHash:
+      const bool.fromEnvironment('dart.vm.product') ? null : _$supabaseHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+@Deprecated('Will be removed in 3.0. Use Ref instead')
+// ignore: unused_element
+typedef SupabaseRef = ProviderRef<SupabaseClient>;
+String _$supabaseGatewayHash() => r'08c616da615ba653f062c7388993f7370ebf9c99';
+
+/// See also [SupabaseGateway].
+@ProviderFor(SupabaseGateway)
+final supabaseGatewayProvider =
+    NotifierProvider<SupabaseGateway, void>.internal(
+  SupabaseGateway.new,
   name: r'supabaseGatewayProvider',
   debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
       ? null
@@ -20,8 +37,6 @@ final supabaseGatewayProvider = Provider<SupabaseClient>.internal(
   allTransitiveDependencies: null,
 );
 
-@Deprecated('Will be removed in 3.0. Use Ref instead')
-// ignore: unused_element
-typedef SupabaseGatewayRef = ProviderRef<SupabaseClient>;
+typedef _$SupabaseGateway = Notifier<void>;
 // ignore_for_file: type=lint
 // ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member, deprecated_member_use_from_same_package

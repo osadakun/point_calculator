@@ -3,7 +3,7 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:point_calculator/components/text.dart';
 import 'package:point_calculator/create_room/create_room_state.dart';
-import 'package:point_calculator/gateway/members_gateway.dart';
+import 'package:point_calculator/gateway/supabase_gateway.dart';
 import 'package:point_calculator/member_management/member_management_view_model.dart';
 
 class MemberManagementWidget extends HookConsumerWidget {
@@ -16,12 +16,12 @@ class MemberManagementWidget extends HookConsumerWidget {
     final errorMessage = useState<String?>(null);
     final shouldReload = useState<bool>(false);
     final viewModel = ref.read(memberManagementViewModelProvider.notifier);
-    final client = ref.read(membersGatewayProvider.notifier);
+    final client = ref.read(supabaseGatewayProvider.notifier);
     final newMemberController = useTextEditingController();
 
     useEffect(() {
       Future(() async {
-        final result = await client.fetchMembers();
+        final result = await client.fetchAllMembers();
         result.map(
           success: (data) {
             memberList.value = data

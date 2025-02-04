@@ -1,18 +1,51 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:point_calculator/components/text.dart';
+import 'package:point_calculator/create_room/create_room_state.dart';
 import 'package:point_calculator/create_room/create_room_view_model.dart';
-import 'package:point_calculator/gateway/rooms_gateway.dart';
+import 'package:point_calculator/gateway/supabase_gateway.dart';
 
 class CreateRoomWidget extends HookConsumerWidget {
   const CreateRoomWidget({super.key});
 
+  bool isValidMembers(List<Member> members, String roomName) {
+    return members.length >= 3 && roomName.isNotEmpty;
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(createRoomViewModelProvider);
-    final isActive = state.isValidMembers();
     final viewModel = ref.read(createRoomViewModelProvider.notifier);
-    final client = ref.read(roomsGatewayProvider.notifier);
+    final client = ref.read(supabaseGatewayProvider.notifier);
+    final allMembersList = useState<List<Member>>([]);
+    final isLoading = useState<bool>(true);
+    final errorMessage = useState<String?>(null);
+    final selectedMember = useState<Member?>(null);
+    final selectedMembersList = useState<List<Member>>([]);
+    final isActive = isValidMembers(selectedMembersList.value, state.roomName);
+
+    useEffect(() {
+      Future(() async {
+        final result = await client.fetchAllMembers();
+        result.map(
+          success: (data) {
+            allMembersList.value = data
+                .map((member) => Member(
+                      name: member['name'] as String,
+                      id: member['id'] as int,
+                    ))
+                .toList();
+            isLoading.value = false;
+          },
+          failure: (error) {
+            errorMessage.value = 'メンバー情報の取得に失敗しました: $error';
+            isLoading.value = false;
+          },
+        );
+      });
+      return null;
+    }, []);
 
     return Scaffold(
       body: SafeArea(
@@ -43,18 +76,35 @@ class CreateRoomWidget extends HookConsumerWidget {
                 children: [
                   const CustomText(text: "メンバー", isBold: true, fontSize: 18),
                   const SizedBox(width: 32),
-                  ElevatedButton(
-                    onPressed: () {
-                      viewModel.addMember();
+                  DropdownButton<Member>(
+                    value: selectedMember.value,
+                    hint: const Text("メンバーを選択"),
+                    items: allMembersList.value
+                        .map((member) => DropdownMenuItem(
+                              value: member,
+                              child: Text(member.name),
+                            ))
+                        .toList(),
+                    onChanged: (member) {
+                      selectedMember.value = member;
                     },
-                    child: const Icon(Icons.add),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.add, color: Colors.blue),
+                    onPressed: () {
+                      if (selectedMember.value != null) {
+                        selectedMembersList.value.add(selectedMember.value!);
+                        allMembersList.value.remove(selectedMember.value);
+                        selectedMember.value = null;
+                      }
+                    },
                   ),
                 ],
               ),
               const SizedBox(height: 16),
               Expanded(
                 child: ListView.builder(
-                  itemCount: state.members.length,
+                  itemCount: selectedMembersList.value.length,
                   itemBuilder: (context, index) {
                     return Padding(
                       padding: const EdgeInsets.symmetric(
@@ -62,20 +112,27 @@ class CreateRoomWidget extends HookConsumerWidget {
                       child: Row(
                         children: [
                           Expanded(
-                            child: buildTextFormField(
-                              context,
-                              (value) {
-                                viewModel.updateMembers(index, value);
-                              },
-                              initialValue: state.members[index].name,
-                              hintText: "名前",
+                            child: CustomText(
+                              text: selectedMembersList.value[index].name,
+                              isBold: true,
+                              fontSize: 18,
                             ),
                           ),
                           const SizedBox(width: 8),
                           IconButton(
                             icon: const Icon(Icons.delete, color: Colors.red),
                             onPressed: () {
-                              viewModel.removeMember(index);
+                              final memberToRemove =
+                                  selectedMembersList.value[index];
+
+                              allMembersList.value = [
+                                ...allMembersList.value,
+                                memberToRemove
+                              ];
+                              final updatedList =
+                                  List.of(selectedMembersList.value)
+                                    ..removeAt(index);
+                              selectedMembersList.value = updatedList;
                             },
                           ),
                         ],
@@ -93,7 +150,8 @@ class CreateRoomWidget extends HookConsumerWidget {
                 ),
                 onPressed: isActive
                     ? () async {
-                        final res = await client.createRoom(state.roomName);
+                        final res = await client.createRoomWithMembers(
+                            state.roomName, selectedMembersList.value);
                         res.map(
                           success: (_) {
                             ScaffoldMessenger.of(context).showSnackBar(
@@ -127,37 +185,37 @@ class CreateRoomWidget extends HookConsumerWidget {
       ),
     );
   }
+}
 
-  TextFormField buildTextFormField(
-    BuildContext context,
-    Function(String) onChanged, {
-    String initialValue = '',
-    String hintText = '',
-  }) {
-    return TextFormField(
-      onTap: () => FocusScope.of(context).unfocus(),
-      style: const TextStyle(fontSize: 20),
-      decoration: InputDecoration(
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(
-            color: Colors.black,
-            width: 2,
-          ),
-        ),
-        fillColor: Colors.grey[200],
-        filled: true,
-        hintText: hintText,
-        hintStyle: const TextStyle(
-          fontSize: 16,
-          color: Colors.grey,
+TextFormField buildTextFormField(
+  BuildContext context,
+  Function(String) onChanged, {
+  String initialValue = '',
+  String hintText = '',
+}) {
+  return TextFormField(
+    onTap: () => FocusScope.of(context).unfocus(),
+    style: const TextStyle(fontSize: 20),
+    decoration: InputDecoration(
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(
+          color: Colors.black,
+          width: 2,
         ),
       ),
-      initialValue: initialValue,
-      onChanged: onChanged,
-    );
-  }
+      fillColor: Colors.grey[200],
+      filled: true,
+      hintText: hintText,
+      hintStyle: const TextStyle(
+        fontSize: 16,
+        color: Colors.grey,
+      ),
+    ),
+    initialValue: initialValue,
+    onChanged: onChanged,
+  );
 }

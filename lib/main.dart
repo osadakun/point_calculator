@@ -5,6 +5,7 @@ import 'package:point_calculator/components/card.dart';
 import 'package:point_calculator/create_room/create_room_widget.dart';
 import 'package:point_calculator/enter_room/enter_room_widget.dart';
 import 'package:point_calculator/member_management/member_management_widget.dart';
+import 'package:point_calculator/util/app_observer.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 void main() async {
@@ -17,8 +18,9 @@ void main() async {
     anonKey: anonKey!,
   );
   runApp(
-    const ProviderScope(
-      child: MyApp(),
+    ProviderScope(
+      observers: [AppObserver()],
+      child: const MyApp(),
     ),
   );
 }
