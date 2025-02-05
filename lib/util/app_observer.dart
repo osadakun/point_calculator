@@ -18,7 +18,9 @@ class AppObserver extends ProviderObserver {
     Object? value,
     ProviderContainer container,
   ) {
-    logger.i('🟢 Provider $provider was initialized with value: $value');
+    // デバッグモード時のみ表示する
+
+    logger.d('🟢 Provider $provider was initialized with value: $value');
   }
 
   @override
@@ -26,7 +28,7 @@ class AppObserver extends ProviderObserver {
     ProviderBase<Object?> provider,
     ProviderContainer container,
   ) {
-    logger.w('🟡 Provider $provider was disposed');
+    logger.d('🟡 Provider $provider was disposed');
     super.didDisposeProvider(provider, container);
   }
 
@@ -47,7 +49,7 @@ class AppObserver extends ProviderObserver {
     StackTrace stackTrace,
     ProviderContainer container,
   ) {
-    logger.e(
+    logger.d(
       '❌ Provider $provider threw an error',
       error: error,
       stackTrace: stackTrace,

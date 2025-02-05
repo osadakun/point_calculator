@@ -1,3 +1,15 @@
+import 'package:logger/logger.dart';
+
+final logger = Logger(
+  printer: PrettyPrinter(
+    methodCount: 1,
+    errorMethodCount: 5,
+    lineLength: 80,
+    colors: true,
+    printEmojis: true,
+  ),
+);
+
 sealed class Result<T> {
   const Result();
 
@@ -18,7 +30,9 @@ sealed class Result<T> {
     if (this is Success<T>) {
       return success((this as Success<T>).value);
     } else {
-      return failure((this as Failure<T>).error);
+      final errorValue = (this as Failure<T>).error;
+      logger.d('❌ Failure occurred: $errorValue', error: errorValue);
+      return failure(errorValue);
     }
   }
 
@@ -30,6 +44,13 @@ sealed class Result<T> {
       return Failure<U>((this as Failure<T>).error);
     }
   }
+
+  /// `Failure` の場合に例外を投げる（簡潔に `throw result.throwIfFailure()` で利用可）
+  void throwIfFailure() {
+    if (this is Failure<T>) {
+      throw (this as Failure<T>).error;
+    }
+  }
 }
 
 class Success<T> extends Result<T> {
@@ -39,5 +60,11 @@ class Success<T> extends Result<T> {
 
 class Failure<T> extends Result<T> {
   final Object error;
-  const Failure(this.error);
+  final StackTrace stackTrace;
+
+  Failure(this.error, [StackTrace? stackTrace])
+      : stackTrace = stackTrace ?? StackTrace.current {
+    logger.d('❌ Failure occurred: $error',
+        error: error, stackTrace: this.stackTrace);
+  }
 }

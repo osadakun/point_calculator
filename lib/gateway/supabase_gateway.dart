@@ -14,6 +14,7 @@ SupabaseClient supabase(Ref ref) {
 @Riverpod(keepAlive: true)
 class SupabaseGateway extends _$SupabaseGateway {
   late final SupabaseClient supabaseClient;
+
   @override
   void build() {
     supabaseClient = ref.read(supabaseProvider);
@@ -23,9 +24,7 @@ class SupabaseGateway extends _$SupabaseGateway {
     try {
       final response = await supabaseClient
           .from('rooms')
-          .insert({
-            'room_name': roomName,
-          })
+          .insert({'room_name': roomName})
           .select('id')
           .single();
       return Success(response['id'] as int);
@@ -35,99 +34,82 @@ class SupabaseGateway extends _$SupabaseGateway {
   }
 
   Future<Result<void>> addMemberToRoom(int roomId, List<Member> members) async {
-  try {
-    final futures = members.map((member) {
-      return supabaseClient.from('room_members').insert({
-        'room_id': roomId,
-        'member_id': member.id,
-      });
-    }).toList();
-
-    await Future.wait(futures);
-
-    return const Success(null);
-  } catch (e) {
-    return Failure(Exception(e.toString()));
-  }
-}
-
-  Future<Result<void>> createRoomWithMembers(
-      String roomName, List<Member> members) async {
-    final roomId = await createRoom(roomName);
-    final result = await roomId.map(
-      success: (id) => addMemberToRoom(id, members),
-      failure: (error) => Future.value(Failure(error)),
-    );
-    return result;
-  }
-
-  Future<Result<Map<String, List<String>>>> fetchRoomInformations() async {
-  try {
-    final rooms = await supabaseClient.from('rooms').select('id, room_name');
-
-    final roomIds = rooms.map((e) => e['id'] as int).toList();
-    if (roomIds.isEmpty) return const Success({});
-    // 各部屋に所属するメンバーIDを取得
-    final roomMembers = await supabaseClient
-        .from('room_members')
-        .select('room_id, member_id')
-        .eq('room_id', roomIds);
-
-    // member_id のリストを作成
-    final memberIds = roomMembers.map((e) => e['member_id'] as int).toSet().toList();
-    if (memberIds.isEmpty) return const Success({}); // メンバーがいなければ空のマップを返す
-
-    // メンバーの名前を取得
-    final members = await supabaseClient
-        .from('members')
-        .select('id, name')
-        .eq('id', memberIds);
-
-    // メンバーIDと名前のマッピングを作成
-    final memberMap = {for (var m in members) m['id'] as int: m['name'] as String};
-
-    // 部屋ごとにメンバーの名前をまとめる
-    final Map<String, List<String>> roomInfo = {};
-    for (var room in rooms) {
-      final roomId = room['id'] as int;
-      final roomName = room['room_name'] as String;
-
-      // この部屋に所属するメンバーの名前を取得
-      final memberNames = roomMembers
-          .where((rm) => rm['room_id'] == roomId)
-          .map((rm) => memberMap[rm['member_id']] ?? 'Unknown') // 名前がない場合 'Unknown'
+    try {
+      final data = members
+          .map((member) => {
+                'room_id': roomId,
+                'member_id': member.id,
+              })
           .toList();
 
-      roomInfo[roomName] = memberNames;
-    }
-
-    return Success(roomInfo);
-  } catch (e) {
-    return Failure(Exception(e.toString()));
-  }
-}
-
-
-  Future<Result<List>> fetchRoomMembers(int roomId) async {
-    try {
-      final memberIds = await supabaseClient
-          .from('room_members')
-          .select('member_id')
-          .eq('room_id', roomId);
-      final response = await supabaseClient
-          .from('members')
-          .select('name')
-          .eq('id', memberIds.map((e) => e['member_id'] as int).toList());
-      return Success(response);
+      await supabaseClient.from('room_members').insert(data);
+      return const Success(null);
     } catch (e) {
       return Failure(Exception(e.toString()));
     }
   }
 
-  Future<Result<List>> fetchAllMembers() async {
+  Future<Result<void>> createRoomWithMembers(
+      String roomName, List<Member> members) async {
+    final roomId = await createRoom(roomName);
+    return roomId.map(
+      success: (id) => addMemberToRoom(id, members),
+      failure: (error) => Future.value(Failure(error)),
+    );
+  }
+
+  /// **部屋情報を取得（部屋名ごとのメンバー一覧）**
+  /// **部屋情報を取得（部屋ID, 部屋名ごとのメンバー一覧）**
+  Future<Result<Map<int, Map<String, List<String>>>>>
+      fetchRoomInformations() async {
     try {
-      final response = await supabaseClient.from('members').select();
-      return Success(response);
+      final response = await supabaseClient
+          .from('room_members')
+          .select('room_id, rooms!inner(room_name), members!inner(name)')
+          .order('room_id', ascending: true);
+
+      final Map<int, Map<String, List<String>>> roomInfo = {};
+
+      for (var item in response) {
+        final roomId = item['room_id'] as int;
+        final roomName = item['rooms']['room_name'] as String;
+        final memberName = item['members']['name'] as String;
+
+        roomInfo.putIfAbsent(roomId, () => {roomName: []});
+        roomInfo[roomId]![roomName]!.add(memberName);
+      }
+
+      return Success(roomInfo);
+    } catch (e) {
+      return Failure(Exception(e.toString()));
+    }
+  }
+
+  /// **特定の部屋にいるメンバー一覧**
+  Future<Result<List<String>>> fetchRoomMembers(int roomId) async {
+    try {
+      final response = await supabaseClient
+          .from('room_members')
+          .select('members!inner(name)')
+          .eq('room_id', roomId);
+
+      final memberNames =
+          response.map((e) => e['members']['name'] as String).toList();
+      return Success(memberNames);
+    } catch (e) {
+      return Failure(Exception(e.toString()));
+    }
+  }
+
+  /// **全メンバー一覧**
+  Future<Result<Map<int, String>>> fetchAllMembers() async {
+    try {
+      final response = await supabaseClient.from('members').select('id, name');
+      final Map<int, String> members = {
+        for (var item in response) item['id'] as int: item['name'] as String
+      };
+
+      return Success(members);
     } catch (e) {
       return Failure(Exception(e.toString()));
     }
@@ -135,9 +117,7 @@ class SupabaseGateway extends _$SupabaseGateway {
 
   Future<Result<void>> addMember(String name) async {
     try {
-      await supabaseClient.from('members').insert({
-        'name': name,
-      });
+      await supabaseClient.from('members').insert({'name': name});
       return const Success(null);
     } catch (e) {
       return Failure(Exception(e.toString()));

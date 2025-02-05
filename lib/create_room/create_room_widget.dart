@@ -30,10 +30,10 @@ class CreateRoomWidget extends HookConsumerWidget {
         final result = await client.fetchAllMembers();
         result.map(
           success: (data) {
-            allMembersList.value = data
-                .map((member) => Member(
-                      name: member['name'] as String,
-                      id: member['id'] as int,
+            allMembersList.value = data.entries
+                .map((entry) => Member(
+                      id: entry.key,
+                      name: entry.value,
                     ))
                 .toList();
             isLoading.value = false;

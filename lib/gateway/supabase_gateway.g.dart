@@ -22,7 +22,7 @@ final supabaseProvider = Provider<SupabaseClient>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef SupabaseRef = ProviderRef<SupabaseClient>;
-String _$supabaseGatewayHash() => r'08c616da615ba653f062c7388993f7370ebf9c99';
+String _$supabaseGatewayHash() => r'0b687b65a066e7c311cf60a36c4d742d151ef519';
 
 /// See also [SupabaseGateway].
 @ProviderFor(SupabaseGateway)

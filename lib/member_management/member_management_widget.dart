@@ -24,10 +24,10 @@ class MemberManagementWidget extends HookConsumerWidget {
         final result = await client.fetchAllMembers();
         result.map(
           success: (data) {
-            memberList.value = data
-                .map((member) => Member(
-                      name: member['name'] as String,
-                      id: member['id'] as int,
+            memberList.value = data.entries
+                .map((entry) => Member(
+                      id: entry.key,
+                      name: entry.value,
                     ))
                 .toList();
             viewModel.updateMembers(memberList.value);

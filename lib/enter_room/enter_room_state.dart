@@ -1,5 +1,4 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
-import 'package:point_calculator/create_room/create_room_state.dart';
 
 part 'enter_room_state.freezed.dart';
 @freezed

@@ -1,4 +1,3 @@
-import 'package:point_calculator/create_room/create_room_state.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'enter_room_state.dart';
 
