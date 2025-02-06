@@ -13,7 +13,6 @@ class EachRoomWidget extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final client = ref.read(supabaseGatewayProvider.notifier);
-    final state = ref.watch(eachRoomViewModelProvider);
     final roomName = data.name;
     final roomId = data.roomId;
     final memberMap = {for (var member in data.members) member.id: member.name};
@@ -62,9 +61,11 @@ class EachRoomWidget extends HookConsumerWidget {
               ),
             ),
             const SizedBox(height: 16),
-            _TableWidget(
-              memberMap: memberMap,
-              roomId: roomId,
+            Expanded(
+              child: _TableWidget(
+                memberMap: memberMap,
+                roomId: roomId,
+              ),
             ),
           ],
         ),
@@ -82,11 +83,13 @@ class _TableWidget extends HookConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final client = ref.read(supabaseGatewayProvider.notifier);
     final viewModel = ref.watch(eachRoomViewModelProvider.notifier);
-    final state = ref.watch(eachRoomViewModelProvider);
-    final scoreInfo = state.scoreInfo;
+    final scoreInfo =
+        ref.watch(eachRoomViewModelProvider.select((value) => value.scoreInfo));
+    final isLoad =
+        ref.watch(eachRoomViewModelProvider.select((value) => value.isLoad));
 
-    // 初回のみ API を叩く
     useEffect(() {
+      debugPrint("useEffect 発火: isLoad=$isLoad");
       Future.microtask(() async {
         final response = await client.fetchResults(roomId);
         response.map(success: (data) {
@@ -96,27 +99,16 @@ class _TableWidget extends HookConsumerWidget {
               context: context,
               builder: (context) {
                 return AlertDialog(
-                  title: const CustomText(
-                    text: "エラー",
-                    isBold: true,
-                    fontSize: 24,
-                  ),
+                  title:
+                      const CustomText(text: "エラー", isBold: true, fontSize: 24),
                   content: CustomText(text: error.toString()),
                 );
               });
         });
       });
       return null;
-    }, []); // 依存リストを空にする
+    }, [isLoad]);
 
-    // `scoreInfo` の変更を監視し、必要なら API を再取得
-    ref.listen(eachRoomViewModelProvider, (previous, next) {
-      if (previous?.scoreInfo != next.scoreInfo) {
-        debugPrint("🔄 scoreInfo が変更されました: $next.scoreInfo");
-      }
-    });
-
-    // `member_id` を `name` に変換
     final List<Map<String, dynamic>> updatedScoreInfo = scoreInfo.map((data) {
       final memberId = data["member_id"] as int;
       return {
@@ -125,10 +117,30 @@ class _TableWidget extends HookConsumerWidget {
       };
     }).toList();
 
-    final countList = updatedScoreInfo.isEmpty
-        ? []
-        : List.generate(updatedScoreInfo.first["scores"].length,
-            (index) => (index + 1).toString());
+    if (updatedScoreInfo.isEmpty) {
+      return const Center(child: CustomText(text: "データなし", fontSize: 16));
+    }
+
+    // プレイヤー名リスト
+    final playerNames = updatedScoreInfo.map((info) => info["name"]).toList();
+
+    // 各スコア（0列目: トータル, 1列目以降: 各スコア）
+    final List<List<String>> scoreRows = [];
+
+    // 1列目 = トータルスコア
+    scoreRows.add([
+      "トータル",
+      ...updatedScoreInfo
+          .map((info) => (info["scores"].fold(0.0, (a, b) => a + b)).toString())
+    ]);
+
+    // 2列目以降 = 各試合のスコア
+    for (int i = 0; i < updatedScoreInfo.first["scores"].length; i++) {
+      scoreRows.add([
+        "${i + 1}",
+        ...updatedScoreInfo.map((info) => info["scores"][i].toString())
+      ]);
+    }
 
     return Container(
       color: Colors.grey[200],
@@ -142,25 +154,14 @@ class _TableWidget extends HookConsumerWidget {
             child: Table(
               border: TableBorder.all(color: Colors.grey), // 枠線
               columnWidths: {
-                for (int i = 0; i < 10; i++)
-                  i: const FixedColumnWidth(120), // 幅を狭くする
+                0: const FixedColumnWidth(100), // 最初の列を固定幅
+                for (int i = 1; i <= playerNames.length; i++)
+                  i: const FixedColumnWidth(120),
               },
               children: [
-                _buildHeader(
-                  [
-                    "トータル",
-                    "名前",
-                    ...countList,
-                  ],
-                ),
-                for (final info in updatedScoreInfo)
-                  _buildRow(
-                    [
-                      (info["scores"].fold(0.0, (a, b) => a + b)).toString(),
-                      info["name"],
-                      ...info["scores"].map((e) => e.toString())
-                    ],
-                  ),
+                _buildHeader(["項目", ...playerNames]),
+                _buildRow(scoreRows.first, isTotal: true),
+                for (final row in scoreRows.skip(1)) _buildRow(row),
               ],
             ),
           ),
@@ -182,8 +183,11 @@ class _TableWidget extends HookConsumerWidget {
     );
   }
 
-  TableRow _buildRow(List<String> cells) {
+  TableRow _buildRow(List<String> cells, {bool isTotal = false}) {
     return TableRow(
+      decoration: isTotal
+          ? BoxDecoration(color: Colors.grey[300]) // トータルの行だけ背景色変更
+          : null,
       children: cells.map((cell) {
         final numValue = double.tryParse(cell);
         final textColor = numValue != null
@@ -304,6 +308,7 @@ class ScoreInputDialogWidget extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final viewModel = ref.watch(eachRoomViewModelProvider.notifier);
     final controllers = useMemoized(() {
       return {
         for (var id in memberMap.keys) id: TextEditingController(),
@@ -388,7 +393,6 @@ class ScoreInputDialogWidget extends HookConsumerWidget {
           onPressed: () async {
             final defaultPoint =
                 basePoint.value * (memberMap.length <= 3 ? 3 : 4) * -1;
-
             int total = controllers.entries.fold(defaultPoint, (sum, entry) {
               int score = int.tryParse(entry.value.text) ?? 0;
               // ✅ マイナスフラグが立っていたら負の値に変換
@@ -421,6 +425,7 @@ class ScoreInputDialogWidget extends HookConsumerWidget {
             response.map(
               success: (_) {
                 if (!context.mounted) return;
+                viewModel.updateIsLoad();
                 Navigator.pop(context);
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text("結果を保存しました")),

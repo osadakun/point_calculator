@@ -10,10 +10,15 @@ class EachRoomViewModel extends _$EachRoomViewModel {
     return const EachRoom();
   }
 
-  // 更新したいstateを引数に取るメソッドを作成
   void updateScoreInfo(List<Map<String, dynamic>> data) {
     state = state.copyWith(
       scoreInfo: data
+    );
+  }
+
+  void updateIsLoad() {
+    state = state.copyWith(
+      isLoad: !state.isLoad
     );
   }
 }
