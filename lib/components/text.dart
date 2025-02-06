@@ -6,6 +6,7 @@ class CustomText extends StatelessWidget {
   final FontWeight weight;
   final Color color;
   final bool isBold;
+  final TextAlign align;
 
   const CustomText({
     super.key,
@@ -14,6 +15,7 @@ class CustomText extends StatelessWidget {
     this.weight = FontWeight.normal,
     this.color = Colors.black,
     this.isBold = false,
+    this.align = TextAlign.left,
   });
 
   @override
@@ -25,6 +27,7 @@ class CustomText extends StatelessWidget {
         fontWeight: isBold ? FontWeight.bold : weight,
         fontSize: fontSize,
       ),
+      textAlign: align,
     );
   }
 }

@@ -46,7 +46,7 @@ class MemberManagementWidget extends HookConsumerWidget {
     final state = ref.watch(memberManagementViewModelProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text("メンバー管理")),
+      appBar: AppBar(title: const CustomText(text: "メンバー管理")),
       body: Padding(
         padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
         child: Column(
@@ -110,69 +110,75 @@ class MemberManagementWidget extends HookConsumerWidget {
                                   fontSize: 18,
                                 ),
                                 trailing: IconButton(
-                                    icon: const Icon(Icons.delete,
-                                        color: Colors.red),
-                                    onPressed: () {
-                                      showDialog(
-                                        context: context,
-                                        builder: (context) {
-                                          return AlertDialog(
-                                            title: const CustomText(
-                                                text: "本当に削除しますか？",
+                                  icon: const Icon(Icons.delete,
+                                      color: Colors.red),
+                                  onPressed: () {
+                                    showDialog(
+                                      context: context,
+                                      builder: (context) {
+                                        return AlertDialog(
+                                          title: const CustomText(
+                                            text: "本当に削除しますか？",
+                                            isBold: true,
+                                            fontSize: 24,
+                                          ),
+                                          content: CustomText(
+                                            text: "削除対象：${member.name}",
+                                            isBold: true,
+                                            fontSize: 18,
+                                          ),
+                                          actions: [
+                                            TextButton(
+                                              onPressed: () {
+                                                Navigator.pop(context);
+                                              },
+                                              child: const CustomText(
+                                                  text: "キャンセル",
+                                                  isBold: true,
+                                                  color: Colors.grey),
+                                            ),
+                                            TextButton(
+                                              onPressed: () async {
+                                                final result = await client
+                                                    .deleteMember(member.id);
+                                                result.map(
+                                                  success: (_) {
+                                                    ScaffoldMessenger.of(
+                                                            context)
+                                                        .showSnackBar(
+                                                      SnackBar(
+                                                          content: Text(
+                                                              "${member.name}が削除されました")),
+                                                    );
+                                                    shouldReload.value = true;
+                                                  },
+                                                  failure: (error) {
+                                                    ScaffoldMessenger.of(
+                                                            context)
+                                                        .showSnackBar(
+                                                      SnackBar(
+                                                        content: Text(
+                                                          "削除に失敗しました: $error",
+                                                        ),
+                                                      ),
+                                                    );
+                                                  },
+                                                );
+                                                if (!context.mounted) return;
+                                                Navigator.pop(context);
+                                              },
+                                              child: const CustomText(
+                                                text: "削除",
                                                 isBold: true,
-                                                fontSize: 24),
-                                            content: CustomText(
-                                                text: "削除対象：${member.name}",
-                                                isBold: true,
-                                                fontSize: 18),
-                                            actions: [
-                                              TextButton(
-                                                onPressed: () {
-                                                  Navigator.pop(context);
-                                                },
-                                                child: const CustomText(
-                                                    text: "キャンセル",
-                                                    isBold: true,
-                                                    color: Colors.grey),
+                                                color: Colors.red,
                                               ),
-                                              TextButton(
-                                                onPressed: () async {
-                                                  final result = await client
-                                                      .deleteMember(member.id);
-                                                  result.map(
-                                                    success: (_) {
-                                                      ScaffoldMessenger.of(
-                                                              context)
-                                                          .showSnackBar(
-                                                        SnackBar(
-                                                            content: Text(
-                                                                "${member.name}が削除されました")),
-                                                      );
-                                                      shouldReload.value = true;
-                                                    },
-                                                    failure: (error) {
-                                                      ScaffoldMessenger.of(
-                                                              context)
-                                                          .showSnackBar(
-                                                        SnackBar(
-                                                            content: Text(
-                                                                "削除に失敗しました: $error")),
-                                                      );
-                                                    },
-                                                  );
-                                                  if (!context.mounted) return;
-                                                  Navigator.pop(context);
-                                                },
-                                                child: const CustomText(
-                                                    text: "削除",
-                                                    isBold: true,
-                                                    color: Colors.red),
-                                              ),
-                                            ],
-                                          );
-                                        },
-                                      );
-                                    }),
+                                            ),
+                                          ],
+                                        );
+                                      },
+                                    );
+                                  },
+                                ),
                               ),
                             );
                           },

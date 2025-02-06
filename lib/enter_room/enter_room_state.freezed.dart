@@ -157,7 +157,7 @@ abstract class _EnterRoomState implements EnterRoomState {
 mixin _$RoomName {
   String get name => throw _privateConstructorUsedError;
   int get roomId => throw _privateConstructorUsedError;
-  List<String> get members => throw _privateConstructorUsedError;
+  List<Member> get members => throw _privateConstructorUsedError;
 
   /// Create a copy of RoomName
   /// with the given fields replaced by the non-null parameter values.
@@ -171,7 +171,7 @@ abstract class $RoomNameCopyWith<$Res> {
   factory $RoomNameCopyWith(RoomName value, $Res Function(RoomName) then) =
       _$RoomNameCopyWithImpl<$Res, RoomName>;
   @useResult
-  $Res call({String name, int roomId, List<String> members});
+  $Res call({String name, int roomId, List<Member> members});
 }
 
 /// @nodoc
@@ -205,7 +205,7 @@ class _$RoomNameCopyWithImpl<$Res, $Val extends RoomName>
       members: null == members
           ? _value.members
           : members // ignore: cast_nullable_to_non_nullable
-              as List<String>,
+              as List<Member>,
     ) as $Val);
   }
 }
@@ -218,7 +218,7 @@ abstract class _$$RoomNameImplCopyWith<$Res>
       __$$RoomNameImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call({String name, int roomId, List<String> members});
+  $Res call({String name, int roomId, List<Member> members});
 }
 
 /// @nodoc
@@ -250,7 +250,7 @@ class __$$RoomNameImplCopyWithImpl<$Res>
       members: null == members
           ? _value._members
           : members // ignore: cast_nullable_to_non_nullable
-              as List<String>,
+              as List<Member>,
     ));
   }
 }
@@ -259,7 +259,7 @@ class __$$RoomNameImplCopyWithImpl<$Res>
 
 class _$RoomNameImpl implements _RoomName {
   const _$RoomNameImpl(
-      {this.name = '', this.roomId = 0, final List<String> members = const []})
+      {this.name = '', this.roomId = 0, final List<Member> members = const []})
       : _members = members;
 
   @override
@@ -268,10 +268,10 @@ class _$RoomNameImpl implements _RoomName {
   @override
   @JsonKey()
   final int roomId;
-  final List<String> _members;
+  final List<Member> _members;
   @override
   @JsonKey()
-  List<String> get members {
+  List<Member> get members {
     if (_members is EqualUnmodifiableListView) return _members;
     // ignore: implicit_dynamic_type
     return EqualUnmodifiableListView(_members);
@@ -309,14 +309,14 @@ abstract class _RoomName implements RoomName {
   const factory _RoomName(
       {final String name,
       final int roomId,
-      final List<String> members}) = _$RoomNameImpl;
+      final List<Member> members}) = _$RoomNameImpl;
 
   @override
   String get name;
   @override
   int get roomId;
   @override
-  List<String> get members;
+  List<Member> get members;
 
   /// Create a copy of RoomName
   /// with the given fields replaced by the non-null parameter values.

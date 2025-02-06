@@ -82,7 +82,7 @@ class CreateRoomWidget extends HookConsumerWidget {
                     items: allMembersList.value
                         .map((member) => DropdownMenuItem(
                               value: member,
-                              child: Text(member.name),
+                              child: CustomText(text: member.name),
                             ))
                         .toList(),
                     onChanged: (member) {

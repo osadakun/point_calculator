@@ -20,6 +20,7 @@ class SupabaseGateway extends _$SupabaseGateway {
     supabaseClient = ref.read(supabaseProvider);
   }
 
+  /// **部屋を作成**
   Future<Result<int>> createRoom(String roomName) async {
     try {
       final response = await supabaseClient
@@ -33,6 +34,7 @@ class SupabaseGateway extends _$SupabaseGateway {
     }
   }
 
+  /// **部屋にメンバーを追加**
   Future<Result<void>> addMemberToRoom(int roomId, List<Member> members) async {
     try {
       final data = members
@@ -49,6 +51,7 @@ class SupabaseGateway extends _$SupabaseGateway {
     }
   }
 
+  /// **部屋を作成してメンバーを追加**
   Future<Result<void>> createRoomWithMembers(
       String roomName, List<Member> members) async {
     final roomId = await createRoom(roomName);
@@ -60,23 +63,26 @@ class SupabaseGateway extends _$SupabaseGateway {
 
   /// **部屋情報を取得（部屋名ごとのメンバー一覧）**
   /// **部屋情報を取得（部屋ID, 部屋名ごとのメンバー一覧）**
-  Future<Result<Map<int, Map<String, List<String>>>>>
+  Future<Result<Map<int, Map<String, List<Member>>>>>
       fetchRoomInformations() async {
     try {
       final response = await supabaseClient
           .from('room_members')
-          .select('room_id, rooms!inner(room_name), members!inner(name)')
+          .select('room_id, rooms!inner(room_name), members!inner(name, id)')
           .order('room_id', ascending: true);
 
-      final Map<int, Map<String, List<String>>> roomInfo = {};
+      final Map<int, Map<String, List<Member>>> roomInfo = {};
 
       for (var item in response) {
         final roomId = item['room_id'] as int;
         final roomName = item['rooms']['room_name'] as String;
-        final memberName = item['members']['name'] as String;
+        final member = Member(
+          name: item['members']['name'] as String,
+          id: item['members']['id'] as int,
+        );
 
         roomInfo.putIfAbsent(roomId, () => {roomName: []});
-        roomInfo[roomId]![roomName]!.add(memberName);
+        roomInfo[roomId]![roomName]!.add(member);
       }
 
       return Success(roomInfo);
@@ -115,6 +121,7 @@ class SupabaseGateway extends _$SupabaseGateway {
     }
   }
 
+  /// **メンバーを追加**
   Future<Result<void>> addMember(String name) async {
     try {
       await supabaseClient.from('members').insert({'name': name});
@@ -124,9 +131,55 @@ class SupabaseGateway extends _$SupabaseGateway {
     }
   }
 
+  /// **メンバーを削除**
   Future<Result<void>> deleteMember(int id) async {
     try {
       await supabaseClient.from('members').delete().eq('id', id);
+      return const Success(null);
+    } catch (e) {
+      return Failure(Exception(e.toString()));
+    }
+  }
+
+  /// **部屋のルールを決定する**
+  Future<Result<void>> setRoomRule(int roomId, String basePoint) async {
+    try {
+      final point = int.tryParse(basePoint) ?? 25000;
+      await supabaseClient.from('rules').upsert(
+          {'room_id': roomId, 'base_point': point},
+          onConflict: 'room_id');
+      return const Success(null);
+    } catch (e) {
+      return Failure(Exception(e.toString()));
+    }
+  }
+
+  /// **部屋のルールを取得**
+  Future<Result<int>> fetchRoomRule(int roomId) async {
+    try {
+      final response = await supabaseClient
+          .from('rules')
+          .select('base_point')
+          .eq('room_id', roomId)
+          .single();
+
+      return Success(response['base_point'] as int);
+    } catch (e) {
+      return Failure(Exception(e.toString()));
+    }
+  }
+
+  /// 得点結果の保存
+  Future<Result<void>> storeResults(
+      List<Map<String, num>> list, int roomId) async {
+    try {
+      await Future.wait(list.map((e) async {
+        await supabaseClient.from('game_scores').insert({
+          'member_id': e["member_id"],
+          'scores': e["score"],
+          'room_id': roomId,
+        });
+      }));
       return const Success(null);
     } catch (e) {
       return Failure(Exception(e.toString()));

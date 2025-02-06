@@ -7,12 +7,12 @@ part of 'enter_room_view_model.dart';
 // **************************************************************************
 
 String _$enterRoomViewModelHash() =>
-    r'5389a6359243b741d0f3eb3b781921c454b4ca7f';
+    r'0f904accbb0c47dcf1a427713abd93369025775a';
 
 /// See also [EnterRoomViewModel].
 @ProviderFor(EnterRoomViewModel)
 final enterRoomViewModelProvider =
-    AutoDisposeNotifierProvider<EnterRoomViewModel, EnterRoomState>.internal(
+    NotifierProvider<EnterRoomViewModel, EnterRoomState>.internal(
   EnterRoomViewModel.new,
   name: r'enterRoomViewModelProvider',
   debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
@@ -22,6 +22,6 @@ final enterRoomViewModelProvider =
   allTransitiveDependencies: null,
 );
 
-typedef _$EnterRoomViewModel = AutoDisposeNotifier<EnterRoomState>;
+typedef _$EnterRoomViewModel = Notifier<EnterRoomState>;
 // ignore_for_file: type=lint
 // ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member, deprecated_member_use_from_same_package

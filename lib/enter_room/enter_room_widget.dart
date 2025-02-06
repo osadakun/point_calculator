@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:point_calculator/components/card.dart';
+import 'package:point_calculator/components/text.dart';
 import 'package:point_calculator/each_room/each_room_widget.dart';
 import 'package:point_calculator/enter_room/enter_room_state.dart';
 import 'package:point_calculator/enter_room/enter_room_view_model.dart';
@@ -51,7 +52,7 @@ class EnterRoomWidget extends HookConsumerWidget {
         child: isLoading.value
             ? const CircularProgressIndicator()
             : errorMessage.value != null
-                ? Text("エラー: ${errorMessage.value}")
+                ? CustomText(text: "エラー: ${errorMessage.value}")
                 : Padding(
                     padding: const EdgeInsets.symmetric(
                         vertical: 48, horizontal: 16),
@@ -59,7 +60,7 @@ class EnterRoomWidget extends HookConsumerWidget {
                       itemCount: state.roomNames.length,
                       itemBuilder: (context, index) {
                         final bodyText = state.roomNames[index].members.isNotEmpty
-                            ? state.roomNames[index].members.join(', ')
+                            ? state.roomNames[index].members.map((member) => member.name).join(', ')
                             : null; // メンバーがいない場合は null
                         return Column(
                           spacing: 24,
@@ -72,7 +73,9 @@ class EnterRoomWidget extends HookConsumerWidget {
                                   context,
                                   MaterialPageRoute(
                                     builder: (context) {
-                                      return const EachRoomWidget();
+                                      return EachRoomWidget(
+                                        data: state.roomNames[index],
+                                      );
                                     },
                                   ),
                                 );
