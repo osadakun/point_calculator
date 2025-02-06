@@ -131,7 +131,7 @@ class _TableWidget extends HookConsumerWidget {
     scoreRows.add([
       "トータル",
       ...updatedScoreInfo
-          .map((info) => (info["scores"].fold(0.0, (a, b) => a + b)).toString())
+          .map((info) => (info["scores"].fold(0.0, (a, b) => a + b)).toStringAsFixed(1))
     ]);
 
     // 2列目以降 = 各試合のスコア
@@ -144,7 +144,7 @@ class _TableWidget extends HookConsumerWidget {
 
     return Container(
       color: Colors.grey[200],
-      padding: const EdgeInsets.all(32),
+      padding: const EdgeInsets.all(8),
       child: Scrollbar(
         thumbVisibility: false,
         child: SingleChildScrollView(
@@ -315,12 +315,12 @@ class ScoreInputDialogWidget extends HookConsumerWidget {
       };
     });
 
-    // 各プレイヤーごとにマイナスフラグを管理
     final minusFlags = useState<Map<int, bool>>(
       {for (var id in memberMap.keys) id: false},
     );
 
     final basePoint = useState(0);
+    final errorMessage = useState<String?>(null);
 
     useEffect(() {
       Future(() async {
@@ -332,57 +332,84 @@ class ScoreInputDialogWidget extends HookConsumerWidget {
 
     return AlertDialog(
       title: const CustomText(text: "最終持ち点を入力", isBold: true, fontSize: 24),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const CustomText(
-            text: "※ 最終持ち点がマイナスの場合はチェックボックスを押してください",
-            fontSize: 14,
-            isBold: true,
-          ),
-          const SizedBox(height: 4),
-          Align(
-            child: CustomText(
-              text: "基準点: ${basePoint.value.toString()}点",
-              fontSize: 14,
-              isBold: true,
+      content: SizedBox(
+        width: 400, // ダイアログの幅を固定
+        child: SingleChildScrollView(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.6, // 高さ制限
             ),
-          ),
-          const SizedBox(height: 16),
-          for (var entry in memberMap.entries)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              child: Row(
-                children: [
-                  Expanded(child: CustomText(text: entry.value, fontSize: 16)),
-                  SizedBox(
-                    width: 80,
-                    child: TextFormField(
-                      controller: controllers[entry.key],
-                      keyboardType: TextInputType.number,
-                      textAlign: TextAlign.center,
-                      decoration: const InputDecoration(
-                        hintText: "25000",
-                        hintStyle: TextStyle(color: Colors.grey),
-                        border: OutlineInputBorder(),
-                        contentPadding: EdgeInsets.symmetric(vertical: 10),
-                      ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const CustomText(
+                  text: "※ 最終持ち点がマイナスの場合はチェックボックスを押してください",
+                  fontSize: 14,
+                  isBold: true,
+                ),
+                const SizedBox(height: 4),
+                Align(
+                  child: CustomText(
+                    text: "基準点: ${basePoint.value.toString()}点",
+                    fontSize: 14,
+                    isBold: true,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                for (var entry in memberMap.entries)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min, // 最小幅で表示
+                      children: [
+                        Expanded(
+                            child: CustomText(text: entry.value, fontSize: 16)),
+                        SizedBox(
+                          width: 80,
+                          child: TextFormField(
+                            controller: controllers[entry.key],
+                            keyboardType: TextInputType.number,
+                            textAlign: TextAlign.center,
+                            decoration: const InputDecoration(
+                              hintText: "25000",
+                              hintStyle: TextStyle(color: Colors.grey),
+                              border: OutlineInputBorder(),
+                              contentPadding:
+                                  EdgeInsets.symmetric(vertical: 10),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Checkbox(
+                          value: minusFlags.value[entry.key] ?? false,
+                          onChanged: (value) {
+                            minusFlags.value = {
+                              ...minusFlags.value,
+                              entry.key: value ?? false,
+                            };
+                          },
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  Checkbox(
-                    value: minusFlags.value[entry.key] ?? false,
-                    onChanged: (value) {
-                      minusFlags.value = {
-                        ...minusFlags.value,
-                        entry.key: value ?? false,
-                      };
-                    },
+                const SizedBox(height: 8),
+
+                // ✅ エラーメッセージを表示（total != 0 のとき）
+                if (errorMessage.value != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8.0),
+                    child: Text(
+                      errorMessage.value!,
+                      style: const TextStyle(
+                          color: Colors.red,
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold),
+                    ),
                   ),
-                ],
-              ),
+              ],
             ),
-        ],
+          ),
+        ),
       ),
       actions: [
         TextButton(
@@ -392,10 +419,9 @@ class ScoreInputDialogWidget extends HookConsumerWidget {
         TextButton(
           onPressed: () async {
             final defaultPoint =
-                basePoint.value * (memberMap.length <= 3 ? 3 : 4) * -1;
+                basePoint.value * memberMap.length * -1;
             int total = controllers.entries.fold(defaultPoint, (sum, entry) {
-              int score = int.tryParse(entry.value.text) ?? 0;
-              // ✅ マイナスフラグが立っていたら負の値に変換
+              int score = int.tryParse(entry.value.text) ?? basePoint.value;
               if (minusFlags.value[entry.key] == true) {
                 score = -score;
               }
@@ -403,19 +429,18 @@ class ScoreInputDialogWidget extends HookConsumerWidget {
             });
 
             if (total != 0) {
-              if (!context.mounted) return;
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text("合計スコアが0になっていません")),
-              );
+              errorMessage.value = "合計スコアが0になっていません"; // ✅ エラーメッセージを更新
               return;
             }
+
+            errorMessage.value = null; // ✅ エラーメッセージをリセット（成功時）
 
             final results = controllers.entries
                 .map((entry) => {
                       "member_id": entry.key,
                       "score": ((minusFlags.value[entry.key] == true
-                                  ? -(int.tryParse(entry.value.text) ?? 0)
-                                  : int.tryParse(entry.value.text) ?? 0) -
+                                  ? -(int.tryParse(entry.value.text) ?? basePoint.value)
+                                  : int.tryParse(entry.value.text) ?? basePoint.value) -
                               basePoint.value) /
                           1000,
                     })
