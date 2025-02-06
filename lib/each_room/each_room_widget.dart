@@ -103,7 +103,16 @@ class _TableWidget extends HookConsumerWidget {
       });
       return null;
     }, []);
-    final memberList = memberMap.entries.toList();
+    final state = ref.read(eachRoomViewModelProvider);
+    final scoreInfo = state.scoreInfo;
+    final List<Map<String, dynamic>> updatedScoreInfo = scoreInfo.map((data) {
+      final memberId = data["member_id"] as int;
+      return {
+        "name": memberMap[memberId] ?? "不明",
+        "scores": data["scores"],
+      };
+    }).toList();
+    final countList = updatedScoreInfo.isEmpty ? [] : List.generate(updatedScoreInfo.first["scores"].length, (index) => (index + 1).toString());
     return Container(
       color: Colors.grey[200],
       padding: const EdgeInsets.all(32),
@@ -116,22 +125,24 @@ class _TableWidget extends HookConsumerWidget {
             child: Table(
               border: TableBorder.all(color: Colors.grey), // 枠線
               columnWidths: {
-                for (int i = 0; i < memberList.length; i++)
-                  i: const FixedColumnWidth(120), // 幅を狭くする
+                for (int i = 0; i < 10; i++)
+                  i: const FixedColumnWidth(80), // 幅を狭くする
               },
               children: [
                 _buildRow(
                   [
                     "トータル",
                     "名前",
+                    ...countList,
                   ],
                   isHeader: true,
                 ),
-                for (final member in memberList)
+                for (final info in updatedScoreInfo)
                   _buildRow(
                     [
-                      member.key.toString(),
-                      member.value,
+                      (info["scores"].fold(0.0, (a , b) => a + b)).toString(),
+                      info["name"],
+                      ...info["scores"].map((e) => e.toString())
                     ],
                   ),
               ],
@@ -154,7 +165,7 @@ class _TableWidget extends HookConsumerWidget {
             text: cell,
             isBold: isHeader,
             align: TextAlign.center,
-            fontSize: isHeader ? 16 : 14,
+            fontSize: isHeader ? 18 : 16,
           ),
         );
       }).toList(),
