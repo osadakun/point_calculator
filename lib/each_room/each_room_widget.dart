@@ -13,6 +13,7 @@ class EachRoomWidget extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final client = ref.read(supabaseGatewayProvider.notifier);
+    final state = ref.watch(eachRoomViewModelProvider);
     final roomName = data.name;
     final roomId = data.roomId;
     final memberMap = {for (var member in data.members) member.id: member.name};
@@ -81,8 +82,12 @@ class _TableWidget extends HookConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final client = ref.read(supabaseGatewayProvider.notifier);
     final viewModel = ref.watch(eachRoomViewModelProvider.notifier);
+    final state = ref.watch(eachRoomViewModelProvider);
+    final scoreInfo = state.scoreInfo;
+
+    // 初回のみ API を叩く
     useEffect(() {
-      Future(() async {
+      Future.microtask(() async {
         final response = await client.fetchResults(roomId);
         response.map(success: (data) {
           viewModel.updateScoreInfo(data);
@@ -92,7 +97,7 @@ class _TableWidget extends HookConsumerWidget {
               builder: (context) {
                 return AlertDialog(
                   title: const CustomText(
-                    text: "本当に削除しますか？",
+                    text: "エラー",
                     isBold: true,
                     fontSize: 24,
                   ),
@@ -102,9 +107,16 @@ class _TableWidget extends HookConsumerWidget {
         });
       });
       return null;
-    }, []);
-    final state = ref.read(eachRoomViewModelProvider);
-    final scoreInfo = state.scoreInfo;
+    }, []); // 依存リストを空にする
+
+    // `scoreInfo` の変更を監視し、必要なら API を再取得
+    ref.listen(eachRoomViewModelProvider, (previous, next) {
+      if (previous?.scoreInfo != next.scoreInfo) {
+        debugPrint("🔄 scoreInfo が変更されました: $next.scoreInfo");
+      }
+    });
+
+    // `member_id` を `name` に変換
     final List<Map<String, dynamic>> updatedScoreInfo = scoreInfo.map((data) {
       final memberId = data["member_id"] as int;
       return {
@@ -112,7 +124,12 @@ class _TableWidget extends HookConsumerWidget {
         "scores": data["scores"],
       };
     }).toList();
-    final countList = updatedScoreInfo.isEmpty ? [] : List.generate(updatedScoreInfo.first["scores"].length, (index) => (index + 1).toString());
+
+    final countList = updatedScoreInfo.isEmpty
+        ? []
+        : List.generate(updatedScoreInfo.first["scores"].length,
+            (index) => (index + 1).toString());
+
     return Container(
       color: Colors.grey[200],
       padding: const EdgeInsets.all(32),
@@ -126,21 +143,20 @@ class _TableWidget extends HookConsumerWidget {
               border: TableBorder.all(color: Colors.grey), // 枠線
               columnWidths: {
                 for (int i = 0; i < 10; i++)
-                  i: const FixedColumnWidth(80), // 幅を狭くする
+                  i: const FixedColumnWidth(120), // 幅を狭くする
               },
               children: [
-                _buildRow(
+                _buildHeader(
                   [
                     "トータル",
                     "名前",
                     ...countList,
                   ],
-                  isHeader: true,
                 ),
                 for (final info in updatedScoreInfo)
                   _buildRow(
                     [
-                      (info["scores"].fold(0.0, (a , b) => a + b)).toString(),
+                      (info["scores"].fold(0.0, (a, b) => a + b)).toString(),
                       info["name"],
                       ...info["scores"].map((e) => e.toString())
                     ],
@@ -153,19 +169,36 @@ class _TableWidget extends HookConsumerWidget {
     );
   }
 
-  TableRow _buildRow(List<String> cells, {bool isHeader = false}) {
+  TableRow _buildHeader(List<String> cells) {
     return TableRow(
-      decoration: isHeader
-          ? BoxDecoration(color: Colors.blue[100]) // ヘッダーの背景色
-          : null,
+      decoration: BoxDecoration(color: Colors.blue[100]),
       children: cells.map((cell) {
         return Padding(
           padding: const EdgeInsets.all(4),
           child: CustomText(
+              text: cell, isBold: true, align: TextAlign.center, fontSize: 16),
+        );
+      }).toList(),
+    );
+  }
+
+  TableRow _buildRow(List<String> cells) {
+    return TableRow(
+      children: cells.map((cell) {
+        final numValue = double.tryParse(cell);
+        final textColor = numValue != null
+            ? (numValue > 0
+                ? Colors.lightBlue
+                : (numValue < 0 ? Colors.redAccent : Colors.black))
+            : Colors.black;
+        return Padding(
+          padding: const EdgeInsets.all(4),
+          child: CustomText(
             text: cell,
-            isBold: isHeader,
+            isBold: true,
             align: TextAlign.center,
-            fontSize: isHeader ? 18 : 16,
+            fontSize: 14,
+            color: textColor,
           ),
         );
       }).toList(),
