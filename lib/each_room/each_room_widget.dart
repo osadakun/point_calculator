@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:point_calculator/components/text.dart';
+import 'package:point_calculator/each_room/each_room_view_model.dart';
 import 'package:point_calculator/enter_room/enter_room_state.dart';
 import 'package:point_calculator/gateway/supabase_gateway.dart';
 
@@ -62,6 +63,7 @@ class EachRoomWidget extends HookConsumerWidget {
             const SizedBox(height: 16),
             _TableWidget(
               memberMap: memberMap,
+              roomId: roomId,
             ),
           ],
         ),
@@ -70,12 +72,37 @@ class EachRoomWidget extends HookConsumerWidget {
   }
 }
 
-class _TableWidget extends StatelessWidget {
-  const _TableWidget({required this.memberMap});
+class _TableWidget extends HookConsumerWidget {
+  const _TableWidget({required this.memberMap, required this.roomId});
   final Map<int, String> memberMap;
+  final int roomId;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final client = ref.read(supabaseGatewayProvider.notifier);
+    final viewModel = ref.watch(eachRoomViewModelProvider.notifier);
+    useEffect(() {
+      Future(() async {
+        final response = await client.fetchResults(roomId);
+        response.map(success: (data) {
+          viewModel.updateScoreInfo(data);
+        }, failure: (error) {
+          showDialog(
+              context: context,
+              builder: (context) {
+                return AlertDialog(
+                  title: const CustomText(
+                    text: "本当に削除しますか？",
+                    isBold: true,
+                    fontSize: 24,
+                  ),
+                  content: CustomText(text: error.toString()),
+                );
+              });
+        });
+      });
+      return null;
+    }, []);
     final memberList = memberMap.entries.toList();
     return Container(
       color: Colors.grey[200],
@@ -89,7 +116,7 @@ class _TableWidget extends StatelessWidget {
             child: Table(
               border: TableBorder.all(color: Colors.grey), // 枠線
               columnWidths: {
-                for (int i = 0; i < 10; i++)
+                for (int i = 0; i < memberList.length; i++)
                   i: const FixedColumnWidth(120), // 幅を狭くする
               },
               children: [

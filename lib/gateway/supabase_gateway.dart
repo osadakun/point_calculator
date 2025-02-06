@@ -185,4 +185,39 @@ class SupabaseGateway extends _$SupabaseGateway {
       return Failure(Exception(e.toString()));
     }
   }
+
+  Future<Result<List<Map<String, dynamic>>>> fetchResults(int roomId) async {
+    try {
+      final response = await supabaseClient
+          .from('game_scores')
+          .select('member_id, scores')
+          .eq('room_id', roomId);
+
+      // `response` を `List<Map<String, dynamic>>` にキャスト
+      final List<Map<String, dynamic>> data =
+          response.cast<Map<String, dynamic>>();
+
+      // メンバーごとにスコアをグループ化する
+      final Map<int, List<double>> groupedResults = {};
+
+      for (var row in data) {
+        final memberId = row['member_id'] as int;
+        final score = (row['scores'] as num).toDouble(); // `num` → `double` に変換
+
+        groupedResults.putIfAbsent(memberId, () => []).add(score);
+      }
+
+      // 必要なフォーマットに変換
+      final List<Map<String, dynamic>> formattedResults = groupedResults.entries
+          .map((entry) => {
+                "member_id": entry.key,
+                "scores": entry.value,
+              })
+          .toList();
+
+      return Success(formattedResults);
+    } catch (e) {
+      return Failure(Exception(e.toString()));
+    }
+  }
 }

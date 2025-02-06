@@ -9,5 +9,6 @@ class EachRoom with _$EachRoom {
     @Default(0) int roomId,
     @Default([]) List<Member> roomMembers,
     @Default(0) int basePoint,
+    @Default([]) List<Map<String, dynamic>> scoreInfo
   }) = _EachRoom;
 }
