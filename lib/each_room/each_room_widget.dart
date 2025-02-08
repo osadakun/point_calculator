@@ -13,6 +13,7 @@ class EachRoomWidget extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final client = ref.read(supabaseGatewayProvider.notifier);
+    final viewModel = ref.watch(eachRoomViewModelProvider.notifier);
     final roomName = data.name;
     final roomId = data.roomId;
     final memberMap = {for (var member in data.members) member.id: member.name};
@@ -40,25 +41,66 @@ class EachRoomWidget extends HookConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch, // 子要素を親幅いっぱいに広げる
           children: [
-            Align(
-              alignment: Alignment.center,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue,
-                  shape: const StadiumBorder(),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue,
+                    shape: const StadiumBorder(),
+                  ),
+                  onPressed: () async {
+                    final response = await client.fetchRoomRule(roomId);
+                    response.map(
+                      success: (data) {
+                        if (!context.mounted) return;
+                        _openScoreInputDialog(
+                            context, client, roomId, memberMap);
+                      },
+                      failure: (error) {
+                        showDialog(
+                          context: context,
+                          builder: (context) {
+                            return AlertDialog(
+                              title: const CustomText(
+                                  text: "エラー", isBold: true, fontSize: 24),
+                              content: const CustomText(
+                                  text: "右上の⚙️マークを押して持ち点の設定を行なってください"),
+                              actions: [
+                                TextButton(
+                                  onPressed: () {
+                                    Navigator.pop(context);
+                                  },
+                                  child: const CustomText(text: "閉じる"),                                ),
+                              ],
+                            );
+                          },
+                        );
+                      },
+                    );
+                  },
+                  child: const CustomText(
+                    text: '結果を入力する',
+                    color: Colors.white,
+                    isBold: true,
+                  ),
                 ),
-                onPressed: () async {
-                  final basePoint = await client.fetchRoomRule(roomId);
-                  final parsePoint = basePoint.getOrElse(() => 0);
-                  if (!context.mounted || parsePoint == 0) return;
-                  _openScoreInputDialog(context, client, roomId, memberMap);
-                },
-                child: const CustomText(
-                  text: '結果を入力する',
-                  color: Colors.white,
-                  isBold: true,
+                const SizedBox(width: 16),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue,
+                    shape: const StadiumBorder(),
+                  ),
+                  onPressed: () {
+                    viewModel.updateIsLoad();
+                  },
+                  child: const CustomText(
+                    text: '更新',
+                    color: Colors.white,
+                    isBold: true,
+                  ),
                 ),
-              ),
+              ],
             ),
             const SizedBox(height: 16),
             Expanded(
@@ -89,23 +131,28 @@ class _TableWidget extends HookConsumerWidget {
         ref.watch(eachRoomViewModelProvider.select((value) => value.isLoad));
 
     useEffect(() {
-      debugPrint("useEffect 発火: isLoad=$isLoad");
-      Future.microtask(() async {
-        final response = await client.fetchResults(roomId);
-        response.map(success: (data) {
-          viewModel.updateScoreInfo(data);
-        }, failure: (error) {
-          showDialog(
-              context: context,
-              builder: (context) {
-                return AlertDialog(
-                  title:
-                      const CustomText(text: "エラー", isBold: true, fontSize: 24),
-                  content: CustomText(text: error.toString()),
-                );
-              });
-        });
-      });
+      Future.microtask(
+        () async {
+          final response = await client.fetchResults(roomId);
+          response.map(
+            success: (data) {
+              viewModel.updateScoreInfo(data);
+            },
+            failure: (error) {
+              showDialog(
+                context: context,
+                builder: (context) {
+                  return AlertDialog(
+                    title: const CustomText(
+                        text: "エラー", isBold: true, fontSize: 24),
+                    content: CustomText(text: error.toString()),
+                  );
+                },
+              );
+            },
+          );
+        },
+      );
       return null;
     }, [isLoad]);
 
@@ -130,8 +177,8 @@ class _TableWidget extends HookConsumerWidget {
     // 1列目 = トータルスコア
     scoreRows.add([
       "トータル",
-      ...updatedScoreInfo
-          .map((info) => (info["scores"].fold(0.0, (a, b) => a + b)).toStringAsFixed(1))
+      ...updatedScoreInfo.map((info) =>
+          (info["scores"].fold(0.0, (a, b) => a + b)).toStringAsFixed(1))
     ]);
 
     // 2列目以降 = 各試合のスコア
@@ -418,8 +465,7 @@ class ScoreInputDialogWidget extends HookConsumerWidget {
         ),
         TextButton(
           onPressed: () async {
-            final defaultPoint =
-                basePoint.value * memberMap.length * -1;
+            final defaultPoint = basePoint.value * memberMap.length * -1;
             int total = controllers.entries.fold(defaultPoint, (sum, entry) {
               int score = int.tryParse(entry.value.text) ?? basePoint.value;
               if (minusFlags.value[entry.key] == true) {
@@ -439,8 +485,10 @@ class ScoreInputDialogWidget extends HookConsumerWidget {
                 .map((entry) => {
                       "member_id": entry.key,
                       "score": ((minusFlags.value[entry.key] == true
-                                  ? -(int.tryParse(entry.value.text) ?? basePoint.value)
-                                  : int.tryParse(entry.value.text) ?? basePoint.value) -
+                                  ? -(int.tryParse(entry.value.text) ??
+                                      basePoint.value)
+                                  : int.tryParse(entry.value.text) ??
+                                      basePoint.value) -
                               basePoint.value) /
                           1000,
                     })
