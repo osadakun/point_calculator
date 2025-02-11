@@ -11,5 +11,6 @@ class EachRoom with _$EachRoom {
     @Default(0) int basePoint,
     @Default([]) List<Map<String, dynamic>> scoreInfo,
     @Default(true) bool isLoad,
+    @Default(true) bool isInitial,
   }) = _EachRoom;
 }

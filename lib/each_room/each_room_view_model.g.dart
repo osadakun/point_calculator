@@ -6,7 +6,7 @@ part of 'each_room_view_model.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$eachRoomViewModelHash() => r'8ce6e913f6d1454ad2c8b5dece8774e259bc5b5c';
+String _$eachRoomViewModelHash() => r'f4a36e4b177642339a3c6b8adb53e49c8d4eae90';
 
 /// See also [EachRoomViewModel].
 @ProviderFor(EachRoomViewModel)

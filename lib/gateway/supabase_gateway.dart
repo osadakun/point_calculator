@@ -186,12 +186,20 @@ class SupabaseGateway extends _$SupabaseGateway {
     }
   }
 
-  Future<Result<List<Map<String, dynamic>>>> fetchResults(int roomId) async {
+  Future<Result<List<Map<String, dynamic>>>> fetchResults(
+      int roomId, bool isInitial, int limit) async {
     try {
-      final response = await supabaseClient
-          .from('game_scores')
-          .select('member_id, scores')
-          .eq('room_id', roomId);
+      final response = isInitial
+          ? await supabaseClient
+              .from('game_scores')
+              .select('member_id, scores')
+              .eq('room_id', roomId)
+          : await supabaseClient
+              .from('game_scores')
+              .select('member_id, scores, created_at')
+              .eq('room_id', roomId)
+              .order('created_at', ascending: false)
+              .limit(limit);
 
       // `response` を `List<Map<String, dynamic>>` にキャスト
       final List<Map<String, dynamic>> data =

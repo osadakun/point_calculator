@@ -23,6 +23,9 @@ class EnterRoomWidget extends HookConsumerWidget {
         final result = await client.fetchRoomInformations();
         result.map(
           success: (data) {
+            if (data.isEmpty) {
+              errorMessage.value = '部屋を作るから新しく部屋の作成を行なってください';
+            }
             roomList.value = data.entries.map((entry) {
               final roomId = entry.key;
               final roomName = entry.value.keys.first;

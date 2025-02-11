@@ -41,66 +41,49 @@ class EachRoomWidget extends HookConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch, // 子要素を親幅いっぱいに広げる
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue,
-                    shape: const StadiumBorder(),
-                  ),
-                  onPressed: () async {
-                    final response = await client.fetchRoomRule(roomId);
-                    response.map(
-                      success: (data) {
-                        if (!context.mounted) return;
-                        _openScoreInputDialog(
-                            context, client, roomId, memberMap);
-                      },
-                      failure: (error) {
-                        showDialog(
-                          context: context,
-                          builder: (context) {
-                            return AlertDialog(
-                              title: const CustomText(
-                                  text: "エラー", isBold: true, fontSize: 24),
-                              content: const CustomText(
-                                  text: "右上の⚙️マークを押して持ち点の設定を行なってください"),
-                              actions: [
-                                TextButton(
-                                  onPressed: () {
-                                    Navigator.pop(context);
-                                  },
-                                  child: const CustomText(text: "閉じる"),                                ),
-                              ],
-                            );
-                          },
-                        );
-                      },
-                    );
-                  },
-                  child: const CustomText(
-                    text: '結果を入力する',
-                    color: Colors.white,
-                    isBold: true,
-                  ),
+            Align(
+              alignment: Alignment.center,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blue,
+                  shape: const StadiumBorder(),
                 ),
-                const SizedBox(width: 16),
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue,
-                    shape: const StadiumBorder(),
-                  ),
-                  onPressed: () {
-                    viewModel.updateIsLoad();
-                  },
-                  child: const CustomText(
-                    text: '更新',
-                    color: Colors.white,
-                    isBold: true,
-                  ),
+                onPressed: () async {
+                  final response = await client.fetchRoomRule(roomId);
+                  response.map(
+                    success: (data) {
+                      if (!context.mounted) return;
+                      _openScoreInputDialog(context, client, roomId, memberMap);
+                    },
+                    failure: (error) {
+                      showDialog(
+                        context: context,
+                        builder: (context) {
+                          return AlertDialog(
+                            title: const CustomText(
+                                text: "エラー", isBold: true, fontSize: 24),
+                            content: const CustomText(
+                                text: "右上の⚙️マークを押して持ち点の設定を行なってください"),
+                            actions: [
+                              TextButton(
+                                onPressed: () {
+                                  Navigator.pop(context);
+                                },
+                                child: const CustomText(text: "閉じる"),
+                              ),
+                            ],
+                          );
+                        },
+                      );
+                    },
+                  );
+                },
+                child: const CustomText(
+                  text: '結果を入力する',
+                  color: Colors.white,
+                  isBold: true,
                 ),
-              ],
+              ),
             ),
             const SizedBox(height: 16),
             Expanded(
@@ -129,11 +112,14 @@ class _TableWidget extends HookConsumerWidget {
         ref.watch(eachRoomViewModelProvider.select((value) => value.scoreInfo));
     final isLoad =
         ref.watch(eachRoomViewModelProvider.select((value) => value.isLoad));
+    final isInitial =
+        ref.watch(eachRoomViewModelProvider.select((value) => value.isInitial));
 
     useEffect(() {
       Future.microtask(
         () async {
-          final response = await client.fetchResults(roomId);
+          final response =
+              await client.fetchResults(roomId, isInitial, memberMap.length);
           response.map(
             success: (data) {
               viewModel.updateScoreInfo(data);
