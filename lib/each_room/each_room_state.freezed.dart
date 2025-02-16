@@ -20,10 +20,13 @@ mixin _$EachRoom {
   int get roomId => throw _privateConstructorUsedError;
   List<Member> get roomMembers => throw _privateConstructorUsedError;
   int get basePoint => throw _privateConstructorUsedError;
-  List<Map<String, dynamic>> get scoreInfo =>
+  List<Map<String, dynamic>> get totalScoreInfo =>
+      throw _privateConstructorUsedError;
+  List<Map<String, dynamic>> get todayScoreInfo =>
       throw _privateConstructorUsedError;
   bool get isLoad => throw _privateConstructorUsedError;
   bool get isInitial => throw _privateConstructorUsedError;
+  String get createdAt => throw _privateConstructorUsedError;
 
   /// Create a copy of EachRoom
   /// with the given fields replaced by the non-null parameter values.
@@ -42,9 +45,11 @@ abstract class $EachRoomCopyWith<$Res> {
       int roomId,
       List<Member> roomMembers,
       int basePoint,
-      List<Map<String, dynamic>> scoreInfo,
+      List<Map<String, dynamic>> totalScoreInfo,
+      List<Map<String, dynamic>> todayScoreInfo,
       bool isLoad,
-      bool isInitial});
+      bool isInitial,
+      String createdAt});
 }
 
 /// @nodoc
@@ -66,9 +71,11 @@ class _$EachRoomCopyWithImpl<$Res, $Val extends EachRoom>
     Object? roomId = null,
     Object? roomMembers = null,
     Object? basePoint = null,
-    Object? scoreInfo = null,
+    Object? totalScoreInfo = null,
+    Object? todayScoreInfo = null,
     Object? isLoad = null,
     Object? isInitial = null,
+    Object? createdAt = null,
   }) {
     return _then(_value.copyWith(
       roomName: null == roomName
@@ -87,9 +94,13 @@ class _$EachRoomCopyWithImpl<$Res, $Val extends EachRoom>
           ? _value.basePoint
           : basePoint // ignore: cast_nullable_to_non_nullable
               as int,
-      scoreInfo: null == scoreInfo
-          ? _value.scoreInfo
-          : scoreInfo // ignore: cast_nullable_to_non_nullable
+      totalScoreInfo: null == totalScoreInfo
+          ? _value.totalScoreInfo
+          : totalScoreInfo // ignore: cast_nullable_to_non_nullable
+              as List<Map<String, dynamic>>,
+      todayScoreInfo: null == todayScoreInfo
+          ? _value.todayScoreInfo
+          : todayScoreInfo // ignore: cast_nullable_to_non_nullable
               as List<Map<String, dynamic>>,
       isLoad: null == isLoad
           ? _value.isLoad
@@ -99,6 +110,10 @@ class _$EachRoomCopyWithImpl<$Res, $Val extends EachRoom>
           ? _value.isInitial
           : isInitial // ignore: cast_nullable_to_non_nullable
               as bool,
+      createdAt: null == createdAt
+          ? _value.createdAt
+          : createdAt // ignore: cast_nullable_to_non_nullable
+              as String,
     ) as $Val);
   }
 }
@@ -116,9 +131,11 @@ abstract class _$$EachRoomImplCopyWith<$Res>
       int roomId,
       List<Member> roomMembers,
       int basePoint,
-      List<Map<String, dynamic>> scoreInfo,
+      List<Map<String, dynamic>> totalScoreInfo,
+      List<Map<String, dynamic>> todayScoreInfo,
       bool isLoad,
-      bool isInitial});
+      bool isInitial,
+      String createdAt});
 }
 
 /// @nodoc
@@ -138,9 +155,11 @@ class __$$EachRoomImplCopyWithImpl<$Res>
     Object? roomId = null,
     Object? roomMembers = null,
     Object? basePoint = null,
-    Object? scoreInfo = null,
+    Object? totalScoreInfo = null,
+    Object? todayScoreInfo = null,
     Object? isLoad = null,
     Object? isInitial = null,
+    Object? createdAt = null,
   }) {
     return _then(_$EachRoomImpl(
       roomName: null == roomName
@@ -159,9 +178,13 @@ class __$$EachRoomImplCopyWithImpl<$Res>
           ? _value.basePoint
           : basePoint // ignore: cast_nullable_to_non_nullable
               as int,
-      scoreInfo: null == scoreInfo
-          ? _value._scoreInfo
-          : scoreInfo // ignore: cast_nullable_to_non_nullable
+      totalScoreInfo: null == totalScoreInfo
+          ? _value._totalScoreInfo
+          : totalScoreInfo // ignore: cast_nullable_to_non_nullable
+              as List<Map<String, dynamic>>,
+      todayScoreInfo: null == todayScoreInfo
+          ? _value._todayScoreInfo
+          : todayScoreInfo // ignore: cast_nullable_to_non_nullable
               as List<Map<String, dynamic>>,
       isLoad: null == isLoad
           ? _value.isLoad
@@ -171,6 +194,10 @@ class __$$EachRoomImplCopyWithImpl<$Res>
           ? _value.isInitial
           : isInitial // ignore: cast_nullable_to_non_nullable
               as bool,
+      createdAt: null == createdAt
+          ? _value.createdAt
+          : createdAt // ignore: cast_nullable_to_non_nullable
+              as String,
     ));
   }
 }
@@ -183,11 +210,14 @@ class _$EachRoomImpl implements _EachRoom {
       this.roomId = 0,
       final List<Member> roomMembers = const [],
       this.basePoint = 0,
-      final List<Map<String, dynamic>> scoreInfo = const [],
+      final List<Map<String, dynamic>> totalScoreInfo = const [],
+      final List<Map<String, dynamic>> todayScoreInfo = const [],
       this.isLoad = true,
-      this.isInitial = true})
+      this.isInitial = true,
+      this.createdAt = ''})
       : _roomMembers = roomMembers,
-        _scoreInfo = scoreInfo;
+        _totalScoreInfo = totalScoreInfo,
+        _todayScoreInfo = todayScoreInfo;
 
   @override
   @JsonKey()
@@ -207,13 +237,22 @@ class _$EachRoomImpl implements _EachRoom {
   @override
   @JsonKey()
   final int basePoint;
-  final List<Map<String, dynamic>> _scoreInfo;
+  final List<Map<String, dynamic>> _totalScoreInfo;
   @override
   @JsonKey()
-  List<Map<String, dynamic>> get scoreInfo {
-    if (_scoreInfo is EqualUnmodifiableListView) return _scoreInfo;
+  List<Map<String, dynamic>> get totalScoreInfo {
+    if (_totalScoreInfo is EqualUnmodifiableListView) return _totalScoreInfo;
     // ignore: implicit_dynamic_type
-    return EqualUnmodifiableListView(_scoreInfo);
+    return EqualUnmodifiableListView(_totalScoreInfo);
+  }
+
+  final List<Map<String, dynamic>> _todayScoreInfo;
+  @override
+  @JsonKey()
+  List<Map<String, dynamic>> get todayScoreInfo {
+    if (_todayScoreInfo is EqualUnmodifiableListView) return _todayScoreInfo;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableListView(_todayScoreInfo);
   }
 
   @override
@@ -222,10 +261,13 @@ class _$EachRoomImpl implements _EachRoom {
   @override
   @JsonKey()
   final bool isInitial;
+  @override
+  @JsonKey()
+  final String createdAt;
 
   @override
   String toString() {
-    return 'EachRoom(roomName: $roomName, roomId: $roomId, roomMembers: $roomMembers, basePoint: $basePoint, scoreInfo: $scoreInfo, isLoad: $isLoad, isInitial: $isInitial)';
+    return 'EachRoom(roomName: $roomName, roomId: $roomId, roomMembers: $roomMembers, basePoint: $basePoint, totalScoreInfo: $totalScoreInfo, todayScoreInfo: $todayScoreInfo, isLoad: $isLoad, isInitial: $isInitial, createdAt: $createdAt)';
   }
 
   @override
@@ -241,10 +283,14 @@ class _$EachRoomImpl implements _EachRoom {
             (identical(other.basePoint, basePoint) ||
                 other.basePoint == basePoint) &&
             const DeepCollectionEquality()
-                .equals(other._scoreInfo, _scoreInfo) &&
+                .equals(other._totalScoreInfo, _totalScoreInfo) &&
+            const DeepCollectionEquality()
+                .equals(other._todayScoreInfo, _todayScoreInfo) &&
             (identical(other.isLoad, isLoad) || other.isLoad == isLoad) &&
             (identical(other.isInitial, isInitial) ||
-                other.isInitial == isInitial));
+                other.isInitial == isInitial) &&
+            (identical(other.createdAt, createdAt) ||
+                other.createdAt == createdAt));
   }
 
   @override
@@ -254,9 +300,11 @@ class _$EachRoomImpl implements _EachRoom {
       roomId,
       const DeepCollectionEquality().hash(_roomMembers),
       basePoint,
-      const DeepCollectionEquality().hash(_scoreInfo),
+      const DeepCollectionEquality().hash(_totalScoreInfo),
+      const DeepCollectionEquality().hash(_todayScoreInfo),
       isLoad,
-      isInitial);
+      isInitial,
+      createdAt);
 
   /// Create a copy of EachRoom
   /// with the given fields replaced by the non-null parameter values.
@@ -273,9 +321,11 @@ abstract class _EachRoom implements EachRoom {
       final int roomId,
       final List<Member> roomMembers,
       final int basePoint,
-      final List<Map<String, dynamic>> scoreInfo,
+      final List<Map<String, dynamic>> totalScoreInfo,
+      final List<Map<String, dynamic>> todayScoreInfo,
       final bool isLoad,
-      final bool isInitial}) = _$EachRoomImpl;
+      final bool isInitial,
+      final String createdAt}) = _$EachRoomImpl;
 
   @override
   String get roomName;
@@ -286,11 +336,15 @@ abstract class _EachRoom implements EachRoom {
   @override
   int get basePoint;
   @override
-  List<Map<String, dynamic>> get scoreInfo;
+  List<Map<String, dynamic>> get totalScoreInfo;
+  @override
+  List<Map<String, dynamic>> get todayScoreInfo;
   @override
   bool get isLoad;
   @override
   bool get isInitial;
+  @override
+  String get createdAt;
 
   /// Create a copy of EachRoom
   /// with the given fields replaced by the non-null parameter values.

@@ -186,13 +186,13 @@ class SupabaseGateway extends _$SupabaseGateway {
     }
   }
 
-  Future<Result<List<Map<String, dynamic>>>> fetchResults(
+  Future<Result<List<Map<String, dynamic>>>> fetchTotalResults(
       int roomId, bool isInitial, int limit) async {
     try {
       final response = isInitial
           ? await supabaseClient
               .from('game_scores')
-              .select('member_id, scores')
+              .select('member_id, scores, created_at')
               .eq('room_id', roomId)
           : await supabaseClient
               .from('game_scores')
@@ -205,12 +205,65 @@ class SupabaseGateway extends _$SupabaseGateway {
       final List<Map<String, dynamic>> data =
           response.cast<Map<String, dynamic>>();
 
+      // メンバーごとにスコアと `created_at` をグループ化
+      final Map<int, List<Map<String, dynamic>>> groupedResults = {};
+
+      for (var row in data) {
+        final memberId = row['member_id'] as int;
+        final score = (row['scores'] as num).toDouble(); // `num` → `double` に変換
+        final createdAt = DateTime.parse(row['created_at'] as String);
+
+        groupedResults.putIfAbsent(memberId, () => []).add({
+          "score": score,
+          "created_at": createdAt,
+        });
+      }
+
+      // 必要なフォーマットに変換
+      final List<Map<String, dynamic>> formattedResults = groupedResults.entries
+          .map((entry) => {
+                "member_id": entry.key,
+                "scores": entry.value.map((e) => e["score"]).toList(),
+                "created_at": entry.value.isNotEmpty
+                    ? entry.value.first["created_at"]?.toIso8601String()
+                    : null, // 最新の created_at を取得
+              })
+          .toList();
+
+      return Success(formattedResults);
+    } catch (e) {
+      return Failure(Exception(e.toString()));
+    }
+  }
+
+  Future<Result<List<Map<String, dynamic>>>> fetchTodayResults(
+      int roomId, bool isInitial, int limit) async {
+    try {
+      if (isInitial) {
+        return const Success([]);
+      }
+      // 36時間前の時刻を計算
+      final targetTime =
+          DateTime.now().subtract(const Duration(hours: 36)).toIso8601String();
+
+      final response = await supabaseClient
+          .from('game_scores')
+          .select('member_id, scores, created_at')
+          .eq('room_id', roomId)
+          .gte('created_at', targetTime)
+          .order('created_at', ascending: false)
+          .limit(limit);
+
+      // `response` を `List<Map<String, dynamic>>` にキャスト
+      final List<Map<String, dynamic>> data =
+          response.cast<Map<String, dynamic>>();
+
       // メンバーごとにスコアをグループ化する
       final Map<int, List<double>> groupedResults = {};
 
       for (var row in data) {
         final memberId = row['member_id'] as int;
-        final score = (row['scores'] as num).toDouble(); // `num` → `double` に変換
+        final score = (row['scores'] as num).toDouble();
 
         groupedResults.putIfAbsent(memberId, () => []).add(score);
       }

@@ -13,7 +13,6 @@ class EachRoomWidget extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final client = ref.read(supabaseGatewayProvider.notifier);
-    final viewModel = ref.watch(eachRoomViewModelProvider.notifier);
     final roomName = data.name;
     final roomId = data.roomId;
     final memberMap = {for (var member in data.members) member.id: member.name};
@@ -108,8 +107,10 @@ class _TableWidget extends HookConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final client = ref.read(supabaseGatewayProvider.notifier);
     final viewModel = ref.watch(eachRoomViewModelProvider.notifier);
-    final scoreInfo =
-        ref.watch(eachRoomViewModelProvider.select((value) => value.scoreInfo));
+    final totalScoreInfo = ref.watch(
+        eachRoomViewModelProvider.select((value) => value.totalScoreInfo));
+    final todayScoreInfo = ref.watch(
+        eachRoomViewModelProvider.select((value) => value.todayScoreInfo));
     final isLoad =
         ref.watch(eachRoomViewModelProvider.select((value) => value.isLoad));
     final isInitial =
@@ -118,11 +119,34 @@ class _TableWidget extends HookConsumerWidget {
     useEffect(() {
       Future.microtask(
         () async {
-          final response =
-              await client.fetchResults(roomId, isInitial, memberMap.length);
+          final response = await client.fetchTotalResults(
+              roomId, isInitial, memberMap.length);
           response.map(
-            success: (data) {
-              viewModel.updateScoreInfo(data);
+            success: (totalData) async {
+              final response = await client.fetchTodayResults(
+                  roomId, isInitial, memberMap.length);
+              response.map(
+                success: (todayData) {
+                  viewModel.updateScoreInfo(totalData, todayData);
+                },
+                failure: (error) {
+                  showDialog(
+                    context: context,
+                    builder: (context) {
+                      return AlertDialog(
+                        title: const CustomText(
+                          text: "エラー",
+                          isBold: true,
+                          fontSize: 24,
+                        ),
+                        content: CustomText(
+                          text: error.toString(),
+                        ),
+                      );
+                    },
+                  );
+                },
+              );
             },
             failure: (error) {
               showDialog(
@@ -130,8 +154,13 @@ class _TableWidget extends HookConsumerWidget {
                 builder: (context) {
                   return AlertDialog(
                     title: const CustomText(
-                        text: "エラー", isBold: true, fontSize: 24),
-                    content: CustomText(text: error.toString()),
+                      text: "エラー",
+                      isBold: true,
+                      fontSize: 24,
+                    ),
+                    content: CustomText(
+                      text: error.toString(),
+                    ),
                   );
                 },
               );
@@ -142,7 +171,8 @@ class _TableWidget extends HookConsumerWidget {
       return null;
     }, [isLoad]);
 
-    final List<Map<String, dynamic>> updatedScoreInfo = scoreInfo.map((data) {
+    final List<Map<String, dynamic>> updatedTodayScoreInfo =
+        todayScoreInfo.map((data) {
       final memberId = data["member_id"] as int;
       return {
         "name": memberMap[memberId] ?? "不明",
@@ -150,29 +180,73 @@ class _TableWidget extends HookConsumerWidget {
       };
     }).toList();
 
-    if (updatedScoreInfo.isEmpty) {
+    final List<Map<String, dynamic>> updatedTotalScoreInfo =
+        totalScoreInfo.map((data) {
+      final memberId = data["member_id"] as int;
+      return {
+        "name": memberMap[memberId] ?? "不明",
+        "scores": data["scores"],
+      };
+    }).toList();
+
+    if (updatedTotalScoreInfo.isEmpty) {
       return const Center(child: CustomText(text: "データなし", fontSize: 16));
     }
 
     // プレイヤー名リスト
-    final playerNames = updatedScoreInfo.map((info) => info["name"]).toList();
+    final playerNames =
+        updatedTotalScoreInfo.map((info) => info["name"]).toList();
 
     // 各スコア（0列目: トータル, 1列目以降: 各スコア）
-    final List<List<String>> scoreRows = [];
+    // 直近分のスコア
+    final List<List<String>> todayScoreRows = [];
+    // トータルのスコア
+    final List<List<String>> totalScoreRows = [];
 
     // 1列目 = トータルスコア
-    scoreRows.add([
-      "トータル",
-      ...updatedScoreInfo.map((info) =>
-          (info["scores"].fold(0.0, (a, b) => a + b)).toStringAsFixed(1))
-    ]);
+    totalScoreRows.add(
+      [
+        "トータル",
+        ...updatedTotalScoreInfo.map(
+          (info) =>
+              (info["scores"].fold(0.0, (a, b) => a + b)).toStringAsFixed(1),
+        ),
+      ],
+    );
+
+    todayScoreRows.add(
+      [
+        "トータル",
+        ...updatedTodayScoreInfo.map(
+          (info) =>
+              (info["scores"].fold(0.0, (a, b) => a + b)).toStringAsFixed(1),
+        ),
+      ],
+    );
 
     // 2列目以降 = 各試合のスコア
-    for (int i = 0; i < updatedScoreInfo.first["scores"].length; i++) {
-      scoreRows.add([
-        "${i + 1}",
-        ...updatedScoreInfo.map((info) => info["scores"][i].toString())
-      ]);
+    for (int i = 0; i < updatedTotalScoreInfo.first["scores"].length; i++) {
+      totalScoreRows.add(
+        [
+          "${i + 1}",
+          ...updatedTotalScoreInfo.map(
+            (info) => info["scores"][i].toString(),
+          ),
+        ],
+      );
+    }
+
+    if (updatedTodayScoreInfo.isNotEmpty) {
+      for (int i = 0; i < updatedTodayScoreInfo.first["scores"].length; i++) {
+        todayScoreRows.add(
+          [
+            "${i + 1}",
+            ...updatedTodayScoreInfo.map(
+              (info) => info["scores"][i].toString(),
+            ),
+          ],
+        );
+      }
     }
 
     return Container(
@@ -184,17 +258,75 @@ class _TableWidget extends HookConsumerWidget {
           scrollDirection: Axis.horizontal, // 横スクロール
           child: SingleChildScrollView(
             scrollDirection: Axis.vertical, // 縦スクロール
-            child: Table(
-              border: TableBorder.all(color: Colors.grey), // 枠線
-              columnWidths: {
-                0: const FixedColumnWidth(100), // 最初の列を固定幅
-                for (int i = 1; i <= playerNames.length; i++)
-                  i: const FixedColumnWidth(120),
-              },
+            child: Row(
               children: [
-                _buildHeader(["項目", ...playerNames]),
-                _buildRow(scoreRows.first, isTotal: true),
-                for (final row in scoreRows.skip(1)) _buildRow(row),
+                Column(
+                  children: [
+                    const Align(
+                      alignment: Alignment.center,
+                      child: CustomText(
+                        text: "今日",
+                        isBold: true,
+                        fontSize: 24,
+                        color: Colors.red,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    updatedTodayScoreInfo.isNotEmpty
+                        ? Table(
+                            border: TableBorder.all(color: Colors.grey), // 枠線
+                            defaultVerticalAlignment:
+                                TableCellVerticalAlignment.middle,
+                            columnWidths: {
+                              0: const FixedColumnWidth(80), // 最初の列を固定幅
+                              for (int i = 1; i <= playerNames.length; i++)
+                                i: const FixedColumnWidth(120),
+                            },
+                            children: [
+                              _buildHeader(["項目", ...playerNames]),
+                              _buildRow(todayScoreRows.first, isTotal: true),
+                              for (final row in todayScoreRows.skip(1))
+                                _buildRow(row),
+                            ],
+                          )
+                        : const Center(
+                            child: CustomText(
+                              text: "本日中のデータがまだありません",
+                            ),
+                          ),
+                  ],
+                ),
+                const SizedBox(width: 120),
+                Column(
+                  children: [
+                    const Align(
+                      alignment: Alignment.center,
+                      child: CustomText(
+                        text: "合計",
+                        isBold: true,
+                        fontSize: 24,
+                        color: Colors.red,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Table(
+                      border: TableBorder.all(color: Colors.grey), // 枠線
+                      defaultVerticalAlignment:
+                          TableCellVerticalAlignment.middle,
+                      columnWidths: {
+                        0: const FixedColumnWidth(80), // 最初の列を固定幅
+                        for (int i = 1; i <= playerNames.length; i++)
+                          i: const FixedColumnWidth(120),
+                      },
+                      children: [
+                        _buildHeader(["項目", ...playerNames]),
+                        _buildRow(totalScoreRows.first, isTotal: true),
+                        for (final row in totalScoreRows.skip(1))
+                          _buildRow(row),
+                      ],
+                    ),
+                  ],
+                ),
               ],
             ),
           ),
@@ -366,7 +498,7 @@ class ScoreInputDialogWidget extends HookConsumerWidget {
     return AlertDialog(
       title: const CustomText(text: "最終持ち点を入力", isBold: true, fontSize: 24),
       content: SizedBox(
-        width: 400, // ダイアログの幅を固定
+        width: double.infinity, // ダイアログの幅を固定
         child: SingleChildScrollView(
           child: ConstrainedBox(
             constraints: BoxConstraints(
