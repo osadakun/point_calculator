@@ -1,6 +1,7 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'create_room_state.freezed.dart';
+
 @freezed
 class CreateRoomState with _$CreateRoomState {
   const factory CreateRoomState({
