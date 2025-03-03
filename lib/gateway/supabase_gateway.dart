@@ -239,20 +239,22 @@ class SupabaseGateway extends _$SupabaseGateway {
   Future<Result<List<Map<String, dynamic>>>> fetchTodayResults(
       int roomId, bool isInitial, int limit) async {
     try {
-      if (isInitial) {
-        return const Success([]);
-      }
       // 36時間前の時刻を計算
-      final targetTime =
-          DateTime.now().subtract(const Duration(hours: 36)).toIso8601String();
+      final targetTime = DateTime.now().subtract(const Duration(hours: 36));
 
-      final response = await supabaseClient
-          .from('game_scores')
-          .select('member_id, scores, created_at')
-          .eq('room_id', roomId)
-          .gte('created_at', targetTime)
-          .order('created_at', ascending: false)
-          .limit(limit);
+      final response = isInitial
+          ? await supabaseClient
+              .from('game_scores')
+              .select('member_id, scores, created_at')
+              .eq('room_id', roomId)
+              .gte('created_at', targetTime)
+          : await supabaseClient
+              .from('game_scores')
+              .select('member_id, scores, created_at')
+              .eq('room_id', roomId)
+              .gte('created_at', targetTime)
+              .order('created_at', ascending: false)
+              .limit(limit);
 
       // `response` を `List<Map<String, dynamic>>` にキャスト
       final List<Map<String, dynamic>> data =
